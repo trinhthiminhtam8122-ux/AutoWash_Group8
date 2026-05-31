@@ -41,7 +41,8 @@ public class UpdateAvatarController extends HttpServlet {
         Customer customer = (Customer) session.getAttribute("CUSTOMER_INFO");
         
         if (customer == null) {
-            response.sendRedirect("login.jsp");
+            session.setAttribute("CURRENT_VIEW", "login");
+            response.sendRedirect("main");
             return;
         }
 
@@ -68,14 +69,20 @@ public class UpdateAvatarController extends HttpServlet {
                     // Update session
                     customer.setAvatarUrl(newAvatarUrl);
                     session.setAttribute("CUSTOMER_INFO", customer);
+                    session.setAttribute("SUCCESS_MSG", "Avatar updated successfully!");
+                } else {
+                    session.setAttribute("ERROR_MSG", "Failed to update avatar.");
                 }
             }
             
-            response.sendRedirect("profile.jsp");
+            session.setAttribute("CURRENT_VIEW", "profile");
+            response.sendRedirect("main");
             
         } catch (Exception e) {
             log("Error at UpdateAvatarController: " + e.toString());
-            response.sendRedirect("profile.jsp?error=UploadFailed");
+            session.setAttribute("ERROR_MSG", "Upload failed. Please try again.");
+            session.setAttribute("CURRENT_VIEW", "profile");
+            response.sendRedirect("main");
         }
     }
 

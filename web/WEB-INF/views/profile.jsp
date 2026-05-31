@@ -11,7 +11,7 @@
     Account sessionAcc = (Account) session.getAttribute("LOGIN_USER");
     
     if (sessionAcc == null) {
-        response.sendRedirect("login.jsp");
+        response.sendRedirect("main?action=login");
         return;
     }
     
@@ -31,7 +31,7 @@
                 session.setAttribute("CUSTOMER_INFO", customer);
             }
         } else {
-            response.sendRedirect("login.jsp");
+            response.sendRedirect("main?action=login");
             return;
         }
     } catch (Exception e) {
@@ -370,25 +370,27 @@
             .nav-links { display: none; }
         }
     </style>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/main.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/profile.css">
 </head>
 <body>
 
     <nav>
-        <a href="index.jsp" class="brand"><i class="fa-solid fa-car-burst"></i> AutoWash</a>
+        <a href="javascript:void(0)" onclick="navTo('home')" class="brand"><i class="fa-solid fa-car-burst"></i> AutoWash</a>
         <div class="nav-links">
-            <a href="index.jsp">Home</a>
+            <a href="javascript:void(0)" onclick="navTo('home')">Home</a>
             <a href="#">Services</a>
             <a href="#">Pricing</a>
-            <a href="profile.jsp" style="color: var(--primary);">Profile</a>
+            <a href="javascript:void(0)" onclick="navTo('profile')" style="color: var(--primary);">Profile</a>
         </div>
         <div class="nav-right">
             <% if (avatarUrl != null && !avatarUrl.isEmpty()) { %>
-                <a href="profile.jsp" class="user-nav">
+                <a href="javascript:void(0)" onclick="navTo('profile')" class="user-nav">
                     <img src="<%= request.getContextPath() + (avatarUrl.startsWith("/") ? "" : "/") + avatarUrl %>" alt="User">
                     <%= userName %>
                 </a>
             <% } else { %>
-                <a href="profile.jsp" class="user-nav">
+                <a href="javascript:void(0)" onclick="navTo('profile')" class="user-nav">
                     <div style="width: 35px; height: 35px; background: var(--bg-body); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary); border: 2px solid #3b82f6;">
                         <i class="fa-solid fa-user"></i>
                     </div>
@@ -538,7 +540,9 @@
                                 <p><%= v.getLicensePlate() %> &bull; <%= v.getColor() %></p>
                             </div>
                             <div class="vehicle-actions">
-                                <a href="javascript:void(0)" onclick="openEditModal('<%= v.getVehicleID() %>', '<%= v.getLicensePlate() %>', '<%= v.getVehicleModel() %>', '<%= v.getColor() %>', '<%= v.getVehicleImageUrl() != null ? v.getVehicleImageUrl() : "" %>')" title="Edit"><i class="fa-solid fa-pen"></i></a>
+                                <a href="javascript:void(0)" onclick="openEditModal('<%= v.getVehicleID() %>', '<%= v.getLicensePlate() %>', '<%= v.getVehicleModel() %>', '<%= v.getColor() %>', '<%= v.getVehicleImageUrl() != null ? v.getVehicleImageUrl() : "" %>', '<%= request.getContextPath() %>')" class="edit-btn" title="Edit">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
                                 <a href="VehicleController?action=delete&id=<%= v.getVehicleID() %>" onclick="return confirm('Are you sure you want to delete this vehicle?');" class="delete-btn" title="Delete"><i class="fa-solid fa-trash-can"></i></a>
                             </div>
                         </div>
@@ -689,132 +693,13 @@
         </div>
     </div>
 
-    <script>
-        function openEditProfileModal(el) {
-            const fullName = el.dataset.name || '';
-            const phone    = el.dataset.phone || '';
-            const email    = el.dataset.email || '';
-            document.getElementById('modalFullName').value = (fullName === 'Guest') ? '' : fullName;
-            document.getElementById('modalEmail').value    = (email === 'N/A')     ? '' : email;
-            document.getElementById('modalPhone').value    = (phone === 'N/A')     ? '' : phone;
-            document.getElementById('profileModalOverlay').style.display = 'flex';
-        }
-
-        function closeProfileModal() {
-            document.getElementById('profileModalOverlay').style.display = 'none';
-        }
-
-        function openAddModal() {
-            document.getElementById('modalTitle').innerText = 'Add Vehicle';
-            document.getElementById('modalDesc').innerText = 'Save your vehicle information for faster booking next time.';
-            document.getElementById('modalAction').value = 'add';
-            document.getElementById('modalVehicleID').value = '';
-            document.getElementById('modalOldImage').value = '';
-            
-            document.getElementById('modalLicense').value = '';
-            document.getElementById('modalBrand').value = '';
-            document.getElementById('modalModel').value = '';
-            document.getElementById('modalType').value = '';
-            document.getElementById('modalColor').value = '';
-            
-            document.getElementById('modalPreviewImg').style.display = 'none';
-            document.getElementById('modalPreviewImg').src = '';
-            document.getElementById('modalUploadContent').style.background = 'transparent';
-            document.getElementById('modalUploadContent').style.padding = '0';
-            
-            document.getElementById('vehicleModalOverlay').style.display = 'flex';
-        }
-
-        function openEditModal(id, license, fullModel, color, imageUrl) {
-            document.getElementById('modalTitle').innerText = 'Edit Vehicle';
-            document.getElementById('modalDesc').innerText = 'Update your vehicle information below.';
-            document.getElementById('modalAction').value = 'edit';
-            document.getElementById('modalVehicleID').value = id;
-            document.getElementById('modalOldImage').value = imageUrl;
-            
-            document.getElementById('modalLicense').value = license;
-            document.getElementById('modalColor').value = color;
-            
-            // Parse full model "Brand Model - Type"
-            let brand = "", model = "", type = "";
-            if (fullModel && fullModel.includes(" - ")) {
-                let parts = fullModel.split(" - ");
-                type = parts[1].trim();
-                let brandModel = parts[0];
-                if (brandModel.includes(" ")) {
-                    brand = brandModel.substring(0, brandModel.indexOf(" ")).trim();
-                    model = brandModel.substring(brandModel.indexOf(" ")).trim();
-                } else {
-                    brand = brandModel;
-                }
-            } else {
-                brand = fullModel || "";
-            }
-            
-            document.getElementById('modalBrand').value = brand;
-            document.getElementById('modalModel').value = model;
-            document.getElementById('modalType').value = type;
-            
-            if (imageUrl && imageUrl !== 'null' && imageUrl !== '') {
-                const prefix = '<%= request.getContextPath() %>' + (imageUrl.startsWith('/') ? '' : '/');
-                document.getElementById('modalPreviewImg').src = prefix + imageUrl;
-                document.getElementById('modalPreviewImg').style.display = 'block';
-                document.getElementById('modalUploadContent').style.background = 'rgba(255,255,255,0.8)';
-                document.getElementById('modalUploadContent').style.padding = '10px';
-                document.getElementById('modalUploadContent').style.borderRadius = '8px';
-            } else {
-                document.getElementById('modalPreviewImg').style.display = 'none';
-                document.getElementById('modalPreviewImg').src = '';
-                document.getElementById('modalUploadContent').style.background = 'transparent';
-                document.getElementById('modalUploadContent').style.padding = '0';
-            }
-            
-            document.getElementById('vehicleModalOverlay').style.display = 'flex';
-        }
-
-        function closeModal() {
-            document.getElementById('vehicleModalOverlay').style.display = 'none';
-        }
-
-        function previewModalImage(input) {
-            if (input.files && input.files[0]) {
-                var reader = new FileReader();
-                reader.onload = function (e) {
-                    const img = document.getElementById('modalPreviewImg');
-                    img.src = e.target.result;
-                    img.style.display = 'block';
-                    
-                    const content = document.getElementById('modalUploadContent');
-                    content.style.background = 'rgba(255,255,255,0.8)';
-                    content.style.padding = '10px';
-                    content.style.borderRadius = '8px';
-                }
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-        // Auto-dismiss toast
-        (function() {
-            const toast = document.getElementById('toastMsg');
-            if (toast) {
-                setTimeout(function() {
-                    toast.style.animation = 'fadeOut 0.4s ease forwards';
-                    setTimeout(function() { toast.remove(); }, 400);
-                }, 3500);
-            }
-        })();
-
-        // Client-side validation for Edit Profile form
-        document.getElementById('editProfileForm').addEventListener('submit', function(e) {
-            const fullName = document.getElementById('modalFullName').value.trim();
-            const email    = document.getElementById('modalEmail').value.trim();
-            const phone    = document.getElementById('modalPhone').value.trim();
-            const emailRx  = /^[\w.\-]+@[\w.\-]+\.[a-zA-Z]{2,}$/;
-            const phoneRx  = /^[0-9]{9,11}$/;
-
-            if (!fullName) { alert('Full name cannot be empty.'); e.preventDefault(); return; }
-            if (!emailRx.test(email)) { alert('Invalid email format.'); e.preventDefault(); return; }
-            if (!phoneRx.test(phone)) { alert('Phone must be 9–11 digits.'); e.preventDefault(); return; }
-        });
-    </script>
+    <form id="postNavForm" action="main" method="POST" style="display:none;">
+        <input type="hidden" name="action" id="postNavAction">
+    </form>
+    <script src="${pageContext.request.contextPath}/assets/js/main.js"></script>
+    <script src="${pageContext.request.contextPath}/assets/js/profile/navigation.js"></script>
+    <script src="${pageContext.request.contextPath}/assets/js/profile/profile-modal.js"></script>
+    <script src="${pageContext.request.contextPath}/assets/js/profile/vehicle-modal.js"></script>
+    <script src="${pageContext.request.contextPath}/assets/js/profile/toast.js"></script>
 </body>
 </html>

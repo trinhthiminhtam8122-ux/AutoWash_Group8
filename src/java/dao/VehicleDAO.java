@@ -125,6 +125,57 @@ public class VehicleDAO {
         return vehicle;
     }
 
+    // Kiểm tra xem biển số xe đã tồn tại và đang active hay chưa
+    public boolean checkLicensePlateExist(String licensePlate) throws ClassNotFoundException, SQLException {
+        boolean exist = false;
+        Connection conn = null;
+        PreparedStatement stm = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtils.getConnection();
+            if (conn != null) {
+                String sql = "SELECT LicensePlate FROM Vehicle WHERE LicensePlate = ? AND (Status IS NULL OR Status != 'deactive')";
+                stm = conn.prepareStatement(sql);
+                stm.setString(1, licensePlate);
+                rs = stm.executeQuery();
+                if (rs.next()) {
+                    exist = true;
+                }
+            }
+        } finally {
+            if (rs != null) rs.close();
+            if (stm != null) stm.close();
+            if (conn != null) conn.close();
+        }
+        return exist;
+    }
+
+    // Kiểm tra xem biển số xe đã tồn tại và đang active hay chưa (ngoại trừ xe đang sửa)
+    public boolean checkLicensePlateExistExclude(String licensePlate, int excludeVehicleID) throws ClassNotFoundException, SQLException {
+        boolean exist = false;
+        Connection conn = null;
+        PreparedStatement stm = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtils.getConnection();
+            if (conn != null) {
+                String sql = "SELECT LicensePlate FROM Vehicle WHERE LicensePlate = ? AND VehicleID != ? AND (Status IS NULL OR Status != 'deactive')";
+                stm = conn.prepareStatement(sql);
+                stm.setString(1, licensePlate);
+                stm.setInt(2, excludeVehicleID);
+                rs = stm.executeQuery();
+                if (rs.next()) {
+                    exist = true;
+                }
+            }
+        } finally {
+            if (rs != null) rs.close();
+            if (stm != null) stm.close();
+            if (conn != null) conn.close();
+        }
+        return exist;
+    }
+
     // Kích hoạt lại xe đã bị deactive (cập nhật thông tin mới và đặt Status = 'active')
     public boolean reactivateVehicle(Vehicle vehicle) throws ClassNotFoundException, SQLException {
         boolean check = false;

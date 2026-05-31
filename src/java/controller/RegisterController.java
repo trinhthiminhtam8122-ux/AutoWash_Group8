@@ -79,7 +79,7 @@ public class RegisterController extends HttpServlet {
                 request.setAttribute("fullName", fullName);
                 request.setAttribute("email", email);
                 request.setAttribute("phone", phone);
-                request.getRequestDispatcher("register.jsp").forward(request, response);
+                request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
                 return;
             }
 
@@ -90,7 +90,7 @@ public class RegisterController extends HttpServlet {
                 request.setAttribute("fullName", fullName);
                 request.setAttribute("email", email);
                 request.setAttribute("phone", phone);
-                request.getRequestDispatcher("register.jsp").forward(request, response);
+                request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
                 return;
             }
 
@@ -128,20 +128,21 @@ public class RegisterController extends HttpServlet {
                     request.getSession().setAttribute("CUSTOMER_INFO", newCustomer);
 
                     // Đăng ký thành công, chuyển tới màn hình thành công
-                    response.sendRedirect("register_success.jsp");
+                    request.getSession().setAttribute("CURRENT_VIEW", "register-success");
+                    response.sendRedirect("main");
                 } else {
                     request.setAttribute("ERROR", "Lỗi tạo hồ sơ khách hàng. Vui lòng thử lại!");
-                    request.getRequestDispatcher("register.jsp").forward(request, response);
+                    request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
                 }
             } else {
                 request.setAttribute("ERROR", "Email này đã được đăng ký hoặc có lỗi xảy ra!");
-                request.getRequestDispatcher("register.jsp").forward(request, response);
+                request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
             }
 
         } catch (Exception e) {
             log("Error at RegisterController: " + e.toString());
             request.setAttribute("ERROR", "Đã xảy ra lỗi hệ thống: " + e.getMessage());
-            request.getRequestDispatcher("register.jsp").forward(request, response);
+            request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
         }
     }
 

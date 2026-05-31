@@ -39,21 +39,23 @@ public class LoginController extends HttpServlet {
                     CustomerDAO customerDAO = new CustomerDAO();
                     Customer customer = customerDAO.getCustomerByAccountID(account.getAccountID());
                     session.setAttribute("CUSTOMER_INFO", customer);
-                    response.sendRedirect("dashboard.jsp");
+                    session.setAttribute("CURRENT_VIEW", "dashboard");
+                    response.sendRedirect("main");
                 } else if ("Admin".equals(account.getRole()) || "Manager".equals(account.getRole()) || "Staff".equals(account.getRole())) {
                     StaffDAO staffDAO = new StaffDAO();
                     Staff staff = staffDAO.getStaffByAccountID(account.getAccountID());
                     session.setAttribute("STAFF_INFO", staff);
-                    response.sendRedirect("dashboard.jsp"); // Có thể chuyển hướng tới trang quản lý riêng
+                    session.setAttribute("CURRENT_VIEW", "dashboard");
+                    response.sendRedirect("main"); // Có thể chuyển hướng tới trang quản lý riêng
                 }
             } else {
                 request.setAttribute("ERROR", "Sai số điện thoại/tài khoản hoặc mật khẩu!");
-                request.getRequestDispatcher("login.jsp").forward(request, response);
+                request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
             }
         } catch (Exception e) {
             log("Error at LoginController: " + e.toString());
             request.setAttribute("ERROR", "Hệ thống đang bảo trì, vui lòng thử lại sau!");
-            request.getRequestDispatcher("login.jsp").forward(request, response);
+            request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);
         }
     }
 

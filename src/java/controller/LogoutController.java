@@ -20,7 +20,12 @@ public class LogoutController extends HttpServlet {
             session.invalidate(); // Xóa phiên đăng nhập
         }
         
-        response.sendRedirect("login.jsp");
+        if (session != null) {
+            session.setAttribute("CURRENT_VIEW", "login");
+        } else {
+            request.getSession().setAttribute("CURRENT_VIEW", "login");
+        }
+        response.sendRedirect("main");
     }
 
     @Override

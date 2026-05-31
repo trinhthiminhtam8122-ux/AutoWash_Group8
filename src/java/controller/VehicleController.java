@@ -57,7 +57,8 @@ public class VehicleController extends HttpServlet {
         HttpSession session = request.getSession();
         Customer customer = (Customer) session.getAttribute("CUSTOMER_INFO");
         if (customer == null) {
-            response.sendRedirect("login.jsp");
+            session.setAttribute("CURRENT_VIEW", "login");
+            response.sendRedirect("main");
             return;
         }
 
@@ -72,7 +73,7 @@ public class VehicleController extends HttpServlet {
 
         String action = getParameterValue(request, "action");
         if (action == null) {
-            response.sendRedirect("profile.jsp");
+            response.sendRedirect("main?action=profile");
             return;
         }
 
@@ -83,7 +84,8 @@ public class VehicleController extends HttpServlet {
                 int vehicleID = Integer.parseInt(getParameterValue(request, "id"));
                 vehicleDAO.deleteVehicle(vehicleID, customer.getCustomerID());
                 session.setAttribute("SUCCESS_MSG", "Vehicle deleted successfully!");
-                response.sendRedirect("profile.jsp");
+                session.setAttribute("CURRENT_VIEW", "profile");
+                response.sendRedirect("main");
             } else if ("add".equals(action) || "edit".equals(action)) {
                 String licensePlate = getParameterValue(request, "licensePlate");
                 String brand = getParameterValue(request, "brand");
@@ -108,6 +110,14 @@ public class VehicleController extends HttpServlet {
                 }
 
                 if ("add".equals(action)) {
+                    // Kiểm tra xem xe đã tồn tại hay chưa
+                    if (vehicleDAO.checkLicensePlateExist(licensePlate)) {
+                        session.setAttribute("ERROR_MSG", "This vehicle is already registered.");
+                        session.setAttribute("CURRENT_VIEW", "profile");
+                        response.sendRedirect("main");
+                        return;
+                    }
+
                     if (vehicleImageUrl == null) {
                         vehicleImageUrl = "/assets/images/default-car.png";
                     }
@@ -137,6 +147,15 @@ public class VehicleController extends HttpServlet {
                     }
                 } else if ("edit".equals(action)) {
                     int vehicleID = Integer.parseInt(getParameterValue(request, "vehicleID"));
+
+                    // Kiểm tra xem biển số mới có bị trùng với xe khác đang active không
+                    if (vehicleDAO.checkLicensePlateExistExclude(licensePlate, vehicleID)) {
+                        session.setAttribute("ERROR_MSG", "This vehicle is already registered.");
+                        session.setAttribute("CURRENT_VIEW", "profile");
+                        response.sendRedirect("main");
+                        return;
+                    }
+
                     vehicle.setVehicleID(vehicleID);
 
                     if (vehicleImageUrl != null) {
@@ -155,13 +174,15 @@ public class VehicleController extends HttpServlet {
                     }
                 }
 
-                response.sendRedirect("profile.jsp");
+                session.setAttribute("CURRENT_VIEW", "profile");
+                response.sendRedirect("main");
             }
         } catch (Exception e) {
             log("Error in VehicleController: " + e.getMessage());
             e.printStackTrace();
             session.setAttribute("ERROR_MSG", "An error occurred: " + e.getMessage());
-            response.sendRedirect("profile.jsp");
+            session.setAttribute("CURRENT_VIEW", "profile");
+            response.sendRedirect("main");
         }
     }
 
