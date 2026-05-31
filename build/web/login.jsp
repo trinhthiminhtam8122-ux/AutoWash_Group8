@@ -94,8 +94,7 @@
             <a href="index.jsp">Home</a>
             <a href="#">Services</a>
             <a href="#">Pricing</a>
-            <a href="#">About Us</a>
-            <a href="#">Contact</a>
+            <a href="profile.jsp">Profile</a>
         </div>
         <div class="nav-buttons">
             <a href="register.jsp" class="btn-outline">Register</a>

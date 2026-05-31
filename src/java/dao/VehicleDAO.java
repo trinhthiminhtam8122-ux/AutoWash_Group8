@@ -22,7 +22,7 @@ public class VehicleDAO {
             conn = DBUtils.getConnection();
             if (conn != null) {
                 String sql = "SELECT VehicleID, CustomerID, LicensePlate, VehicleModel, Color, VehicleImageUrl "
-                           + "FROM Vehicle WHERE CustomerID = ?";
+                           + "FROM Vehicle WHERE CustomerID = ? AND (Status IS NULL OR Status != 'deactive')";
                 stm = conn.prepareStatement(sql);
                 stm.setInt(1, customerID);
                 rs = stm.executeQuery();
@@ -70,7 +70,7 @@ public class VehicleDAO {
         return check;
     }
 
-    // Xóa xe (Kiểm tra CustomerID để bảo mật)
+    // Xóa mềm xe (chuyển Status sang deactive)
     public boolean deleteVehicle(int vehicleID, int customerID) throws ClassNotFoundException, SQLException {
         boolean check = false;
         Connection conn = null;
@@ -78,10 +78,69 @@ public class VehicleDAO {
         try {
             conn = DBUtils.getConnection();
             if (conn != null) {
-                String sql = "DELETE FROM Vehicle WHERE VehicleID = ? AND CustomerID = ?";
+                String sql = "UPDATE Vehicle SET Status = 'deactive' WHERE VehicleID = ? AND CustomerID = ?";
                 stm = conn.prepareStatement(sql);
                 stm.setInt(1, vehicleID);
                 stm.setInt(2, customerID);
+                check = stm.executeUpdate() > 0;
+            }
+        } finally {
+            if (stm != null) stm.close();
+            if (conn != null) conn.close();
+        }
+        return check;
+    }
+
+    // Tìm xe đã bị deactive theo biển số & customerID (để reactivate thay vì insert mới)
+    public Vehicle findDeactivatedByLicensePlate(String licensePlate, int customerID) throws ClassNotFoundException, SQLException {
+        Vehicle vehicle = null;
+        Connection conn = null;
+        PreparedStatement stm = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtils.getConnection();
+            if (conn != null) {
+                String sql = "SELECT VehicleID, CustomerID, LicensePlate, VehicleModel, Color, VehicleImageUrl "
+                           + "FROM Vehicle WHERE LicensePlate = ? AND CustomerID = ? AND Status = 'deactive'";
+                stm = conn.prepareStatement(sql);
+                stm.setString(1, licensePlate);
+                stm.setInt(2, customerID);
+                rs = stm.executeQuery();
+                if (rs.next()) {
+                    vehicle = new Vehicle(
+                            rs.getInt("VehicleID"),
+                            rs.getInt("CustomerID"),
+                            rs.getString("LicensePlate"),
+                            rs.getString("VehicleModel"),
+                            rs.getString("Color"),
+                            rs.getString("VehicleImageUrl")
+                    );
+                }
+            }
+        } finally {
+            if (rs != null) rs.close();
+            if (stm != null) stm.close();
+            if (conn != null) conn.close();
+        }
+        return vehicle;
+    }
+
+    // Kích hoạt lại xe đã bị deactive (cập nhật thông tin mới và đặt Status = 'active')
+    public boolean reactivateVehicle(Vehicle vehicle) throws ClassNotFoundException, SQLException {
+        boolean check = false;
+        Connection conn = null;
+        PreparedStatement stm = null;
+        try {
+            conn = DBUtils.getConnection();
+            if (conn != null) {
+                String sql = "UPDATE Vehicle SET VehicleModel = ?, Color = ?, VehicleImageUrl = ?, Status = 'active' "
+                           + "WHERE VehicleID = ? AND CustomerID = ?";
+                stm = conn.prepareStatement(sql);
+                stm.setString(1, vehicle.getVehicleModel());
+                stm.setString(2, vehicle.getColor());
+                stm.setString(3, vehicle.getVehicleImageUrl());
+                stm.setInt(4, vehicle.getVehicleID());
+                stm.setInt(5, vehicle.getCustomerID());
                 check = stm.executeUpdate() > 0;
             }
         } finally {
@@ -126,7 +185,7 @@ public class VehicleDAO {
             conn = DBUtils.getConnection();
             if (conn != null) {
                 String sql = "SELECT VehicleID, CustomerID, LicensePlate, VehicleModel, Color, VehicleImageUrl "
-                           + "FROM Vehicle WHERE VehicleID = ? AND CustomerID = ?";
+                           + "FROM Vehicle WHERE VehicleID = ? AND CustomerID = ? AND (Status IS NULL OR Status != 'deactive')";
                 stm = conn.prepareStatement(sql);
                 stm.setInt(1, vehicleID);
                 stm.setInt(2, customerID);

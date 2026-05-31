@@ -14,31 +14,62 @@ public class StaffDAO {
 
     // Lấy thông tin Staff dựa vào AccountID (Thường dùng sau khi đăng nhập)
     public Staff getStaffByAccountID(int accountID) throws ClassNotFoundException, SQLException {
-        Connection conn = null;
-        PreparedStatement stm = null;
-        ResultSet rs = null;
-        Staff staff = null;
+//        Connection conn = null;
+//        PreparedStatement stm = null;
+//        ResultSet rs = null;
+//        Staff staff = null;
+//        try {
+//            conn = DBUtils.getConnection();
+//            if (conn != null) {
+//                String sql = "SELECT StaffID, AccountID, FullName, Role "
+//                           + "FROM Staff WHERE AccountID = ?";
+//                stm = conn.prepareStatement(sql);
+//                stm.setInt(1, accountID);
+//                rs = stm.executeQuery();
+//                if (rs.next()) {
+//                    staff = new Staff(
+//                            rs.getInt("StaffID"),
+//                            rs.getInt("AccountID"),
+//                            rs.getString("FullName"),
+//                            rs.getString("Role")
+//                    );
+//                }
+//            }
+//        } finally {
+//            if (rs != null) rs.close();
+//            if (stm != null) stm.close();
+//            if (conn != null) conn.close();
+//        }
+//        return staff;
+    Connection conn =null;
+    PreparedStatement stm=null;
+    ResultSet rs =null;
+    Staff staff =null;
         try {
-            conn = DBUtils.getConnection();
-            if (conn != null) {
-                String sql = "SELECT StaffID, AccountID, FullName, Role "
+            conn=DBUtils.getConnection();
+            if(conn!=null){
+                String sql="SELECT StaffID, AccountID, FullName, Role "
                            + "FROM Staff WHERE AccountID = ?";
-                stm = conn.prepareStatement(sql);
+                stm=conn.prepareStatement(sql);
                 stm.setInt(1, accountID);
-                rs = stm.executeQuery();
-                if (rs.next()) {
-                    staff = new Staff(
-                            rs.getInt("StaffID"),
-                            rs.getInt("AccountID"),
-                            rs.getString("FullName"),
-                            rs.getString("Role")
-                    );
+                rs=stm.executeQuery();
+                if(rs.next()){
+                    int staffid=rs.getInt("StaffID");
+                    int accountid=rs.getInt("AccountID");
+                    String fullName=rs.getString("FullName");
+                    String role =rs.getString("Role");
+                    staff =new Staff(staffid, accountid, fullName, role);
+                    
+                    
                 }
             }
-        } finally {
-            if (rs != null) rs.close();
-            if (stm != null) stm.close();
-            if (conn != null) conn.close();
+            
+        } catch (Exception e) {
+        }
+        finally{
+            rs.close();
+            stm.close();
+            conn.close();
         }
         return staff;
     }

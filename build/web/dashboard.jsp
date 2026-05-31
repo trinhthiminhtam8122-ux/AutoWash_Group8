@@ -54,31 +54,12 @@
         }
 
         /* Navbar */
-        nav {
-            background: var(--bg-white);
-            padding: 1rem 3rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        .brand {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: black;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        .nav-links a {
-            text-decoration: none;
-            color: var(--text-dark);
-        }
+        nav { background: white; display: flex; justify-content: space-between; align-items: center; padding: 1rem 3rem; border-bottom: 2px solid #3b82f6; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .brand { font-size: 1.5rem; font-weight: 800; color: black; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+        .brand i { color: #3b82f6; font-size: 1.8rem; }
+        .nav-links { display: flex; gap: 2rem; font-size: 0.95rem; font-weight: 700; }
+        .nav-links a { color: var(--text-dark); text-decoration: none; transition: 0.3s; }
+        .nav-links a:hover { color: var(--primary); }
 
         .nav-right {
             display: flex;
@@ -354,7 +335,7 @@
 <body>
 
     <nav>
-        <div class="brand">Auto<span style="color: #2563eb;">Wash</span></div>
+        <a href="index.jsp" class="brand"><i class="fa-solid fa-car-burst"></i> AutoWash</a>
         <div class="nav-links">
             <a href="dashboard.jsp">Home</a>
             <a href="#">Booking</a>

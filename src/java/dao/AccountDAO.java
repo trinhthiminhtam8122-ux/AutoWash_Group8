@@ -45,6 +45,38 @@ public class AccountDAO {
         return account;
     }
 
+    // Lấy tài khoản theo ID
+    public Account getAccountById(int accountID) throws ClassNotFoundException, SQLException {
+        Connection conn = null;
+        PreparedStatement stm = null;
+        ResultSet rs = null;
+        Account account = null;
+        try {
+            conn = DBUtils.getConnection();
+            if (conn != null) {
+                String sql = "SELECT AccountID, Username, PasswordHash, Role, Status "
+                           + "FROM Account WHERE AccountID = ?";
+                stm = conn.prepareStatement(sql);
+                stm.setInt(1, accountID);
+                rs = stm.executeQuery();
+                if (rs.next()) {
+                    account = new Account(
+                            rs.getInt("AccountID"),
+                            rs.getString("Username"),
+                            rs.getString("PasswordHash"),
+                            rs.getString("Role"),
+                            rs.getString("Status")
+                    );
+                }
+            }
+        } finally {
+            if (rs != null) rs.close();
+            if (stm != null) stm.close();
+            if (conn != null) conn.close();
+        }
+        return account;
+    }
+
     // Lấy tất cả tài khoản
     public List<Account> getAllAccounts() throws ClassNotFoundException, SQLException {
         List<Account> list = new ArrayList<>();
@@ -152,5 +184,26 @@ public class AccountDAO {
             if (conn != null) conn.close();
         }
         return exist;
+    }
+
+    // Cập nhật Username (Email)
+    public boolean updateUsername(int accountID, String newUsername) throws ClassNotFoundException, SQLException {
+        boolean check = false;
+        Connection conn = null;
+        PreparedStatement stm = null;
+        try {
+            conn = DBUtils.getConnection();
+            if (conn != null) {
+                String sql = "UPDATE Account SET Username = ? WHERE AccountID = ?";
+                stm = conn.prepareStatement(sql);
+                stm.setString(1, newUsername);
+                stm.setInt(2, accountID);
+                check = stm.executeUpdate() > 0;
+            }
+        } finally {
+            if (stm != null) stm.close();
+            if (conn != null) conn.close();
+        }
+        return check;
     }
 }

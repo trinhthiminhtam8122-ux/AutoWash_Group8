@@ -8,6 +8,7 @@ public class Customer {
     private int accountID;
     private String fullName;
     private String phone;
+    private String email;
     private int tierID;
     private int totalWashes;
     private BigDecimal lifetimeSpend;
@@ -18,11 +19,13 @@ public class Customer {
     public Customer() {
     }
 
-    public Customer(int customerID, int accountID, String fullName, String phone, int tierID, int totalWashes, BigDecimal lifetimeSpend, int currentPoints, String avatarUrl, Timestamp createdAt) {
+    public Customer(int customerID, int accountID, String fullName, String phone, String email, int tierID,
+            int totalWashes, BigDecimal lifetimeSpend, int currentPoints, String avatarUrl, Timestamp createdAt) {
         this.customerID = customerID;
         this.accountID = accountID;
         this.fullName = fullName;
         this.phone = phone;
+        this.email = email;
         this.tierID = tierID;
         this.totalWashes = totalWashes;
         this.lifetimeSpend = lifetimeSpend;
@@ -30,6 +33,7 @@ public class Customer {
         this.avatarUrl = avatarUrl;
         this.createdAt = createdAt;
     }
+    
 
     public int getCustomerID() {
         return customerID;
@@ -66,6 +70,12 @@ public class Customer {
     public int getTierID() {
         return tierID;
     }
+    public String getEmail() {
+        return email;
+    }
+    public void setEmail(String email) {
+        this.email = email;
+    }   
 
     public void setTierID(int tierID) {
         this.tierID = tierID;
@@ -118,6 +128,7 @@ public class Customer {
                 ", accountID=" + accountID +
                 ", fullName='" + fullName + '\'' +
                 ", phone='" + phone + '\'' +
+                ", email='" + email + '\'' +
                 ", tierID=" + tierID +
                 ", totalWashes=" + totalWashes +
                 ", lifetimeSpend=" + lifetimeSpend +

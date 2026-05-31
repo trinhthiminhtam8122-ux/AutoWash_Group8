@@ -2,16 +2,40 @@
 <%@page import="dto.Customer"%>
 <%@page import="dto.Account"%>
 <%@page import="dao.VehicleDAO"%>
+<%@page import="dao.AccountDAO"%>
+<%@page import="dao.CustomerDAO"%>
 <%@page import="dto.Vehicle"%>
 <%@page import="java.util.List"%>
 <%
     // Authentication check
-    Account acc = (Account) session.getAttribute("LOGIN_USER");
-    Customer customer = (Customer) session.getAttribute("CUSTOMER_INFO");
+    Account sessionAcc = (Account) session.getAttribute("LOGIN_USER");
     
-    if (acc == null && customer == null) {
+    if (sessionAcc == null) {
         response.sendRedirect("login.jsp");
         return;
+    }
+    
+    // Fetch fresh data from DB
+    AccountDAO aDao = new AccountDAO();
+    CustomerDAO cDao = new CustomerDAO();
+    
+    Account acc = null;
+    Customer customer = null;
+    
+    try {
+        acc = aDao.getAccountById(sessionAcc.getAccountID());
+        if (acc != null) {
+            customer = cDao.getCustomerByAccountID(acc.getAccountID());
+            session.setAttribute("LOGIN_USER", acc);
+            if (customer != null) {
+                session.setAttribute("CUSTOMER_INFO", customer);
+            }
+        } else {
+            response.sendRedirect("login.jsp");
+            return;
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
     }
     
     List<Vehicle> myVehicles = null;
@@ -38,17 +62,26 @@
         else if (customer.getTierID() == 4) tierName = "Platinum member";
         else tierName = "Gold member"; // Defaulting to gold for demo matching image
     }
-    if (acc != null) {
-        email = acc.getUsername();
+    if (customer != null) {
+        email = customer.getEmail() != null ? customer.getEmail() : "N/A";
         if ("Guest".equals(userName)) {
-            userName = acc.getUsername();
+            userName = acc != null ? acc.getUsername() : "Guest";
         }
+    } else if (acc != null) {
+        email = acc.getUsername();
+        if ("Guest".equals(userName)) userName = acc.getUsername();
     }
     
-    // Fallback data if incomplete for demo purposes
-    if ("Guest".equals(userName) || userName == null) userName = "Guest";
-    if ("N/A".equals(email)) email = "N/A";
-    if ("N/A".equals(phone)) phone = "N/A";
+    // Fallback
+    if (userName == null || "Guest".equals(userName)) userName = "Guest";
+    if (email == null) email = "N/A";
+    if (phone == null || "N/A".equals(phone)) phone = "N/A";
+    
+    // Flash messages
+    String successMsg = (String) session.getAttribute("SUCCESS_MSG");
+    String errorMsg   = (String) session.getAttribute("ERROR_MSG");
+    session.removeAttribute("SUCCESS_MSG");
+    session.removeAttribute("ERROR_MSG");
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -63,8 +96,32 @@
             --primary: #2563eb;
             --text-dark: #111827;
             --text-muted: #6b7280;
-            --bg-body: #f3f4f6; /* Modern light gray */
+            --bg-body: #f3f4f6;
             --border: #e5e7eb;
+            --success: #16a34a;
+            --error: #dc2626;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999;
+            padding: 1rem 1.5rem; border-radius: 12px;
+            display: flex; align-items: center; gap: 0.75rem;
+            font-size: 0.95rem; font-weight: 600;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease;
+            min-width: 280px;
+        }
+        .toast.success { background: #f0fdf4; color: #15803d; border-left: 4px solid #16a34a; }
+        .toast.error   { background: #fef2f2; color: #dc2626; border-left: 4px solid #dc2626; }
+        .toast i { font-size: 1.1rem; }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(60px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to   { opacity: 0; }
         }
 
         * {
@@ -322,7 +379,6 @@
             <a href="index.jsp">Home</a>
             <a href="#">Services</a>
             <a href="#">Pricing</a>
-            <a href="#">About Us</a>
             <a href="profile.jsp" style="color: var(--primary);">Profile</a>
         </div>
         <div class="nav-right">
@@ -344,6 +400,19 @@
     </nav>
 
     <div class="container">
+    
+    <%-- Toast notifications --%>
+    <% if (successMsg != null) { %>
+    <div id="toastMsg" class="toast success">
+        <i class="fa-solid fa-circle-check"></i>
+        <%= successMsg %>
+    </div>
+    <% } else if (errorMsg != null) { %>
+    <div id="toastMsg" class="toast error">
+        <i class="fa-solid fa-circle-xmark"></i>
+        <%= errorMsg %>
+    </div>
+    <% } %>
         
         <!-- Sidebar -->
         <div class="sidebar">
@@ -427,7 +496,13 @@
             <div>
                 <div class="section-header">
                     <h3>Personal Info</h3>
-                    <a href="#"><i class="fa-solid fa-pen-to-square"></i> Edit Profile</a>
+                    <a href="javascript:void(0)" id="editProfileBtn"
+                       data-name="<%= userName.replace("\"", "&quot;") %>"
+                       data-phone="<%= phone.replace("\"", "&quot;") %>"
+                       data-email="<%= email.replace("\"", "&quot;") %>"
+                       onclick="openEditProfileModal(this)">
+                        <i class="fa-solid fa-pen-to-square"></i> Edit Profile
+                    </a>
                 </div>
                 <div class="info-card">
                     <div class="info-item">
@@ -537,6 +612,33 @@
         </div>
     </footer>
 
+    <!-- Edit Profile Modal -->
+    <div id="profileModalOverlay" class="modal-overlay">
+        <div class="modal-content modal">
+            <button class="modal-close" onclick="closeProfileModal()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header">
+                <h2>Edit Profile</h2>
+                <p>Update your personal information below.</p>
+            </div>
+            
+            <form id="editProfileForm" action="UpdateProfileController" method="POST">
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" name="fullName" id="modalFullName" class="input-field" required>
+                </div>
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" id="modalEmail" class="input-field" required>
+                </div>
+                <div class="input-group">
+                    <label>Phone Number</label>
+                    <input type="text" name="phone" id="modalPhone" class="input-field" readonly style="background-color: #e2e8f0; cursor: not-allowed; color: #64748b;" title="Phone number cannot be changed">
+                </div>
+                <button type="submit" class="btn-submit">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Vehicle Modal -->
     <div id="vehicleModalOverlay" class="modal-overlay">
         <div class="modal-content modal">
@@ -588,6 +690,20 @@
     </div>
 
     <script>
+        function openEditProfileModal(el) {
+            const fullName = el.dataset.name || '';
+            const phone    = el.dataset.phone || '';
+            const email    = el.dataset.email || '';
+            document.getElementById('modalFullName').value = (fullName === 'Guest') ? '' : fullName;
+            document.getElementById('modalEmail').value    = (email === 'N/A')     ? '' : email;
+            document.getElementById('modalPhone').value    = (phone === 'N/A')     ? '' : phone;
+            document.getElementById('profileModalOverlay').style.display = 'flex';
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModalOverlay').style.display = 'none';
+        }
+
         function openAddModal() {
             document.getElementById('modalTitle').innerText = 'Add Vehicle';
             document.getElementById('modalDesc').innerText = 'Save your vehicle information for faster booking next time.';
@@ -676,6 +792,29 @@
                 reader.readAsDataURL(input.files[0]);
             }
         }
+        // Auto-dismiss toast
+        (function() {
+            const toast = document.getElementById('toastMsg');
+            if (toast) {
+                setTimeout(function() {
+                    toast.style.animation = 'fadeOut 0.4s ease forwards';
+                    setTimeout(function() { toast.remove(); }, 400);
+                }, 3500);
+            }
+        })();
+
+        // Client-side validation for Edit Profile form
+        document.getElementById('editProfileForm').addEventListener('submit', function(e) {
+            const fullName = document.getElementById('modalFullName').value.trim();
+            const email    = document.getElementById('modalEmail').value.trim();
+            const phone    = document.getElementById('modalPhone').value.trim();
+            const emailRx  = /^[\w.\-]+@[\w.\-]+\.[a-zA-Z]{2,}$/;
+            const phoneRx  = /^[0-9]{9,11}$/;
+
+            if (!fullName) { alert('Full name cannot be empty.'); e.preventDefault(); return; }
+            if (!emailRx.test(email)) { alert('Invalid email format.'); e.preventDefault(); return; }
+            if (!phoneRx.test(phone)) { alert('Phone must be 9–11 digits.'); e.preventDefault(); return; }
+        });
     </script>
 </body>
 </html>
