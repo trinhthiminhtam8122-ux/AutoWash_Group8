@@ -1,6 +1,7 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%
     String errorEmail = (String) request.getAttribute("ERROR_EMAIL");
+    String errorPhone = (String) request.getAttribute("ERROR_PHONE");
     String errorPw = (String) request.getAttribute("ERROR_PW");
     String errorGeneral = (String) request.getAttribute("ERROR");
     
@@ -62,7 +63,6 @@
                 </div>
             </div>
             
-            <img src="https://cdni.iconscout.com/illustration/premium/thumb/car-wash-service-5349472-4467000.png" alt="Car Wash" class="car-bg" style="width: 100%; max-width: 500px; margin: 0 auto;">
         </div>
 
         <!-- Right Side -->
@@ -93,7 +93,10 @@
 
                     <div class="input-group">
                         <label>Phone number</label>
-                        <input type="tel" name="phone" class="input-field" placeholder="Enter your phone number" value="<%= ph %>" required>
+                        <input type="tel" name="phone" class="input-field <%= errorPhone != null ? "error" : "" %>" placeholder="Enter your phone number" value="<%= ph %>" required>
+                        <% if (errorPhone != null) { %>
+                            <span class="error-text"><%= errorPhone %></span>
+                        <% } %>
                     </div>
 
                     <div class="input-group">

@@ -57,7 +57,7 @@ nav { background: white; display: flex; justify-content: space-between; align-it
 .nav-right { display: flex; align-items: center; gap: 1rem; }
 .user-nav { display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: var(--text-dark); font-weight: 600; }
 .user-nav img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid #3b82f6; }
-.logout-btn { color: #ef4444; text-decoration: none; font-weight: 600; font-size: 0.9rem; padding: 0.4rem 0.8rem; border-radius: 6px; transition: 0.3s; }
+.logout-btn { color: var(--error); text-decoration: none; font-weight: 600; font-size: 0.9rem; padding: 0.4rem 0.8rem; border-radius: 6px; transition: 0.3s; }
 .logout-btn:hover { background: #fef2f2; }
 
 /* Footer */

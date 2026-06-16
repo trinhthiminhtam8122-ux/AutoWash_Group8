@@ -20,10 +20,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 
-@WebServlet(name = "RegisterController", urlPatterns = {"/RegisterController"})
+@WebServlet(name = "RegisterController", urlPatterns = { "/RegisterController" })
 @MultipartConfig(fileSizeThreshold = 1024 * 1024 * 2, // 2MB
-                 maxFileSize = 1024 * 1024 * 10,      // 10MB
-                 maxRequestSize = 1024 * 1024 * 50)   // 50MB
+        maxFileSize = 1024 * 1024 * 10, // 10MB
+        maxRequestSize = 1024 * 1024 * 50) // 50MB
 public class RegisterController extends HttpServlet {
 
     // Hàm tiện ích lấy tên file
@@ -43,19 +43,20 @@ public class RegisterController extends HttpServlet {
         if (fileName == null || fileName.trim().isEmpty()) {
             return null; // Không upload ảnh
         }
-        
-        // Thư mục lưu trên Server đã chuyển ra ngoài ổ đĩa D: để không bị mất khi Clean & Build
+
+        // Thư mục lưu trên Server đã chuyển ra ngoài ổ đĩa D: để không bị mất khi Clean
+        // & Build
         String uploadFilePath = "D:" + File.separator + "auto_wash_uploads";
-        
+
         File fileSaveDir = new File(uploadFilePath);
         if (!fileSaveDir.exists()) {
             fileSaveDir.mkdirs(); // Tạo thư mục nếu chưa có
         }
-        
+
         // Tạo tên file ngẫu nhiên để tránh trùng lặp
         String uniqueFileName = UUID.randomUUID().toString() + "_" + Paths.get(fileName).getFileName().toString();
         part.write(uploadFilePath + File.separator + uniqueFileName);
-        
+
         // Vẫn trả về tiền tố uploads/ để ImageServlet có thể bắt được URL
         return "uploads/" + uniqueFileName;
     }
@@ -72,7 +73,7 @@ public class RegisterController extends HttpServlet {
             String password = request.getParameter("password");
             String confirmPassword = request.getParameter("confirmPassword");
             String email = request.getParameter("email");
-            
+
             // Backend validation
             if (!password.equals(confirmPassword)) {
                 request.setAttribute("ERROR_PW", "Passwords do not match.");
@@ -84,9 +85,37 @@ public class RegisterController extends HttpServlet {
             }
 
             AccountDAO accountDAO = new AccountDAO();
-            
-            if (accountDAO.checkAccountExist(email)) {
-                request.setAttribute("ERROR_EMAIL", "This email is already registered.");
+            // Normalize phone and validate
+            if (phone == null || phone.trim().isEmpty()) {
+                request.setAttribute("ERROR_PHONE", "Phone is required.");
+                request.setAttribute("fullName", fullName);
+                request.setAttribute("email", email);
+                request.setAttribute("phone", phone);
+                request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
+                return;
+            }
+            String normalizedPhone = phone.trim().replaceAll("[\\s\\-()]", "");
+            if (!normalizedPhone.matches("^\\+?\\d+$")) {
+                request.setAttribute("ERROR_PHONE", "Số điện thoại không hợp lệ.");
+                request.setAttribute("fullName", fullName);
+                request.setAttribute("email", email);
+                request.setAttribute("phone", phone);
+                request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
+                return;
+            }
+
+            CustomerDAO customerDAOCheck = new CustomerDAO();
+            if (email != null && !email.trim().isEmpty() && customerDAOCheck.checkEmailExist(email)) {
+                request.setAttribute("ERROR_EMAIL", "Email đã trùng lặp.");
+                request.setAttribute("fullName", fullName);
+                request.setAttribute("email", email);
+                request.setAttribute("phone", phone);
+                request.getRequestDispatcher("/WEB-INF/views/register.jsp").forward(request, response);
+                return;
+            }
+
+            if (accountDAO.checkAccountExist(normalizedPhone) || customerDAOCheck.checkPhoneExist(phone)) {
+                request.setAttribute("ERROR_PHONE", "Số điện thoại đã trùng lặp.");
                 request.setAttribute("fullName", fullName);
                 request.setAttribute("email", email);
                 request.setAttribute("phone", phone);
@@ -97,14 +126,15 @@ public class RegisterController extends HttpServlet {
             CustomerDAO customerDAO = new CustomerDAO();
             VehicleDAO vehicleDAO = new VehicleDAO();
 
-            // 1. Tạo Account mới (Username là email)
+            // 1. Tạo Account mới (Username là số điện thoại)
             Account newAccount = new Account();
-            newAccount.setUsername(email);
-            newAccount.setPasswordHash(password); 
+            newAccount.setUsername(normalizedPhone);
+            newAccount.setPasswordHash(password);
             newAccount.setRole("Customer");
             newAccount.setStatus("Active");
 
             int accountId = accountDAO.insertAccountReturnId(newAccount);
+            newAccount.setAccountID(accountId);
 
             if (accountId > 0) {
                 // 2. Tạo Customer
@@ -112,6 +142,7 @@ public class RegisterController extends HttpServlet {
                 newCustomer.setAccountID(accountId);
                 newCustomer.setFullName(fullName);
                 newCustomer.setPhone(phone);
+                newCustomer.setEmail(email);
                 newCustomer.setTierID(1); // Mặc định hạng 1 (Member)
                 newCustomer.setTotalWashes(0);
                 newCustomer.setLifetimeSpend(BigDecimal.ZERO);
@@ -122,7 +153,7 @@ public class RegisterController extends HttpServlet {
 
                 if (customerId > 0) {
                     newCustomer.setCustomerID(customerId);
-                    
+
                     // Auto login
                     request.getSession().setAttribute("LOGIN_USER", newAccount);
                     request.getSession().setAttribute("CUSTOMER_INFO", newCustomer);

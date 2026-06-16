@@ -53,7 +53,6 @@
                 </div>
             </div>
             
-            <img src="https://cdni.iconscout.com/illustration/premium/thumb/car-wash-service-5349472-4467000.png" alt="Car Wash" class="car-bg" style="width: 100%; max-width: 500px; margin: 0 auto;">
         </div>
 
         <!-- Right Side -->
@@ -69,9 +68,12 @@
 
                 <form action="LoginController" method="POST">
                     <div class="input-group">
-                        <label>Email or phone number</label>
+                        <label>Phone number</label>
                         <i class="fa-regular fa-user input-icon"></i>
-                        <input type="text" name="username" class="input-field" placeholder="Enter your email or phone number" required>
+                        <input type="tel" name="username" class="input-field" placeholder="Enter your phone number" required pattern="[0-9]+">
+                        <% if (request.getAttribute("Error_PHONE") != null) { %>
+                            <div class="error-msg"><i class="fa-solid fa-circle-exclamation"></i> <%= request.getAttribute("Error_PHONE") %></div>
+                        <% } %>
                     </div>
 
                     <div class="input-group">

@@ -54,19 +54,7 @@
             <a href="javascript:void(0)" onclick="navTo('dashboard')" class="btn-submit">Go to home</a>
         </div>
 
-        <div class="footer">
-            <div class="footer-left">
-                <p>📍 123 St T, Duong 3/2, Khu Cong Nghe Cao Q.9, Ho Chi Minh City, TP. Thu Duc, VN</p>
-                <p>📞 0123456789</p>
-                <p>✉️ autowash@gmail.com</p>
-            </div>
-            <div class="footer-right">
-                <div><i class="fa-brands fa-youtube"></i> Youtube</div>
-                <div><i class="fa-brands fa-linkedin"></i> LinkedIn</div>
-                <div><i class="fa-brands fa-instagram"></i> Instagram</div>
-                <div><i class="fa-brands fa-facebook"></i> Facebook</div>
-            </div>
-        </div>
+
     </div>
 
     <form id="postNavForm" action="main" method="POST" style="display:none;">

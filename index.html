@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoWash Pro - Demo</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-bg: #0b132b;
+            --secondary-bg: #1c2541;
+            --accent-gold: #ffc107;
+            --text-light: #ffffff;
+            --app-bg: #f4f6f9;
+        }
+        body { 
+            background-color: #e9ecef; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        /* Mobile App Container Simulation */
+        .mobile-container {
+            max-width: 480px;
+            margin: 20px auto;
+            background-color: var(--app-bg);
+            border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            min-height: 800px;
+            position: relative;
+        }
+        /* Admin Container */
+        .admin-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .app-header {
+            background-color: var(--primary-bg);
+            color: var(--text-light);
+            padding: 20px 20px 40px 20px;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+        }
+        .tier-badge-gold {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #000;
+            font-weight: bold;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            box-shadow: 0 2px 5px rgba(255, 215, 0, 0.4);
+        }
+        .card-custom {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-top: -30px;
+            background: #fff;
+        }
+        .nav-bottom {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: #fff;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+        }
+        .nav-bottom a {
+            color: #6c757d;
+            text-decoration: none;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+        .nav-bottom a.active { color: var(--primary-bg); font-weight: bold; }
+        .nav-bottom i { display: block; font-size: 1.4rem; margin-bottom: 2px; }
+        
+        .section-view { display: none; }
+        .section-view.active { display: block; }
+        
+        .time-slot {
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .time-slot:hover { border-color: var(--accent-gold); }
+        .time-slot.priority { border-left: 5px solid var(--accent-gold); background-color: #fffdf0; }
+        .time-slot.selected { background-color: var(--secondary-bg); color: white; }
+    </style>
+</head>
+<body>
+
+<!-- Mode Switcher (Chỉ dùng cho Demo để chuyển luồng) -->
+<div class="text-center my-3">
+    <div class="btn-group" role="group">
+        <button type="button" class="btn btn-outline-dark" onclick="switchMode('guest')">1. Guest Register</button>
+        <button type="button" class="btn btn-outline-dark" onclick="switchMode('customer')">2 & 3. Customer (Gold)</button>
+        <button type="button" class="btn btn-outline-dark" onclick="switchMode('admin')">4. Admin Panel</button>
+    </div>
+</div>
+
+<!-- ==============================================
+     GUEST / CUSTOMER APP VIEW
+================================================-->
+<div id="appView" class="mobile-container section-view active">
+    
+    <!-- L1: GUEST REGISTER -->
+    <div id="view-register" class="app-section section-view active">
+        <div class="app-header text-center pb-5">
+            <h2>AutoWash Pro</h2>
+            <p class="text-white-50">Smart Wash - Smart Rewards</p>
+        </div>
+        <div class="card-custom mx-3 p-4">
+            <h5 class="text-center mb-4">Đăng ký Thành viên</h5>
+            <form>
+                <div class="mb-3">
+                    <label class="form-label text-muted small">Họ và tên</label>
+                    <input type="text" class="form-control" placeholder="Nhập tên của bạn">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted small">Số điện thoại</label>
+                    <input type="tel" class="form-control" placeholder="090...">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted small">Biển số xe (Hệ thống LPR)</label>
+                    <input type="text" class="form-control" placeholder="VD: 51H-123.45">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted small">Mật khẩu</label>
+                    <input type="password" class="form-control" placeholder="******">
+                </div>
+                <button type="button" class="btn btn-dark w-100 py-2 rounded-pill" onclick="alert('Đăng ký thành công! Bạn là hạng Member. Tặng 1 điểm đầu tiên.')">Đăng ký & Nhận ưu đãi</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- L2: CUSTOMER DASHBOARD (View Points & Rewards) -->
+    <div id="view-dashboard" class="app-section section-view">
+        <div class="app-header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">Chào buổi sáng,</h5>
+                <h3>Dương</h3>
+            </div>
+            <div class="text-end">
+                <span class="tier-badge-gold"><i class="fas fa-crown"></i> GOLD</span>
+            </div>
+        </div>
+        <div class="card-custom mx-3 p-4">
+            <div class="text-center mb-4">
+                <p class="text-muted mb-1">Điểm hiện tại</p>
+                <h1 class="text-primary fw-bold" style="font-size: 2.5rem;">4,250</h1>
+                <p class="small text-success">+20% Tốc độ tích điểm (Đặc quyền Gold)</p>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span class="fw-bold">Phần thưởng tiếp theo: Free Wax</span>
+                    <span>5,000 pts</span>
+                </div>
+                <div class="progress" style="height: 10px; border-radius: 10px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: 85%;"></div>
+                </div>
+                <p class="text-end text-muted mt-1" style="font-size: 0.75rem;">Chỉ còn 750 điểm nữa!</p>
+            </div>
+
+            <hr>
+            <div class="row text-center mt-3">
+                <div class="col-6 border-end">
+                    <i class="fas fa-car-side fs-3 text-secondary mb-2"></i>
+                    <h6 class="mb-0">15</h6>
+                    <small class="text-muted">Lượt rửa xe</small>
+                </div>
+                <div class="col-6">
+                    <i class="fas fa-gift fs-3 text-secondary mb-2"></i>
+                    <h6 class="mb-0">1 Lượt</h6>
+                    <small class="text-muted">Nâng cấp Free (Tháng này)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- L3: BOOKING (Gold Priority) -->
+    <div id="view-booking" class="app-section section-view">
+        <div class="app-header">
+            <h4>Đặt lịch rửa xe</h4>
+            <p class="text-white-50 m-0">Được phép đặt trước 12 ngày (Gold)</p>
+        </div>
+        <div class="card-custom mx-3 p-3" style="max-height: 550px; overflow-y: auto;">
+            <label class="form-label fw-bold">Chọn ngày</label>
+            <input type="date" class="form-control mb-4" value="2026-05-20">
+            
+            <label class="form-label fw-bold">Khung giờ hiện có</label>
+            
+            <!-- Standard Slot -->
+            <div class="time-slot" onclick="this.classList.toggle('selected')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1"><i class="far fa-clock"></i> 08:00 AM</h6>
+                        <small class="text-muted">Khung giờ tiêu chuẩn</small>
+                    </div>
+                    <span class="badge bg-light text-dark border">Trống</span>
+                </div>
+            </div>
+
+            <!-- Priority Slot (Gold+) -->
+            <div class="time-slot priority" onclick="this.classList.toggle('selected')">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1"><i class="far fa-clock"></i> 09:30 AM</h6>
+                        <small class="text-warning fw-bold"><i class="fas fa-star"></i> Giờ ưu tiên</small>
+                    </div>
+                    <span class="badge bg-warning text-dark">Gold & Plat</span>
+                </div>
+            </div>
+
+            <!-- Full Slot -->
+            <div class="time-slot" style="opacity: 0.5; cursor: not-allowed;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1"><i class="far fa-clock"></i> 10:30 AM</h6>
+                        <small class="text-muted">Khung giờ tiêu chuẩn</small>
+                    </div>
+                    <span class="badge bg-danger">Kín lịch</span>
+                </div>
+            </div>
+
+            <button class="btn btn-dark w-100 py-3 mt-3 rounded-3 fw-bold" onclick="alert('Đặt lịch thành công! Hệ thống đã ghi nhận quyền ưu tiên của bạn.')">Xác nhận đặt lịch</button>
+        </div>
+    </div>
+
+    <!-- Mobile Navigation (Customer Mode Only) -->
+    <div class="nav-bottom" id="mobile-nav" style="display: none;">
+        <a href="#" class="active" onclick="switchTab('view-dashboard', this)"><i class="fas fa-home"></i>Home</a>
+        <a href="#" onclick="switchTab('view-booking', this)"><i class="fas fa-calendar-check"></i>Booking</a>
+        <a href="#"><i class="fas fa-history"></i>History</a>
+        <a href="#"><i class="fas fa-user"></i>Profile</a>
+    </div>
+</div>
+
+<!-- ==============================================
+     ADMIN PANEL VIEW
+================================================-->
+<div id="adminView" class="admin-container section-view">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-cogs text-primary"></i> AutoWash Admin Center</h2>
+        <div>
+            <span class="badge bg-success p-2">System Status: Online (99.8% Uptime)</span>
+        </div>
+    </div>
+
+    <!-- Reports -->
+    <h5 class="mb-3">Báo cáo tổng quan (Reports)</h5>
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Tổng khách hàng</p>
+                    <h3 class="fw-bold">1,450</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Booking hôm nay</p>
+                    <h3 class="fw-bold text-primary">56</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Điểm đã đổi (Redeemed)</p>
+                    <h3 class="fw-bold text-warning">15.2K</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Tỉ lệ LPR thành công</p>
+                    <h3 class="fw-bold text-success">98.5%</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration & Promotion -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white fw-bold">Cấu hình Hạng thành viên (Tier Logic)</div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <thead class="text-muted">
+                            <tr><th>Tier</th><th>Điều kiện</th><th>Bonus Điểm</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Member</td><td>Đăng ký</td><td>0%</td></tr>
+                            <tr><td><span class="badge bg-secondary">Silver</span></td><td>5 lượt / 2M VND</td><td>+10%</td></tr>
+                            <tr><td><span class="badge bg-warning text-dark">Gold</span></td><td>15 lượt / 6M VND</td><td>+20%</td></tr>
+                            <tr><td><span class="badge bg-dark">Platinum</span></td><td>30 lượt / 15M VND</td><td>+30%</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white fw-bold">Chạy Campaign Khuyến mãi</div>
+                <div class="card-body">
+                    <form>
+                        <div class="mb-3">
+                            <label class="form-label">Tên chương trình</label>
+                            <input type="text" class="form-control" value="Cuối tuần nhân đôi điểm tích lũy">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Đối tượng nhận (Targeted Promos)</label>
+                            <select class="form-select">
+                                <option>Tất cả Member</option>
+                                <option selected>Chỉ Silver trở lên (Silver+)</option>
+                                <option>Chỉ Gold và Platinum</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="alert('Đã gửi thông báo ưu đãi đến thiết bị của toàn bộ khách hàng Silver trở lên!')">
+                            <i class="fas fa-paper-plane"></i> Gửi Broadcast
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Logic chuyển đổi góc nhìn cho Demo
+    function switchMode(mode) {
+        document.querySelectorAll('.section-view').forEach(e => e.classList.remove('active'));
+        document.getElementById('mobile-nav').style.display = 'none';
+
+        if(mode === 'guest') {
+            document.getElementById('appView').classList.add('active');
+            document.getElementById('view-register').classList.add('active');
+        } else if (mode === 'customer') {
+            document.getElementById('appView').classList.add('active');
+            document.getElementById('view-dashboard').classList.add('active');
+            document.getElementById('mobile-nav').style.display = 'flex';
+        } else if (mode === 'admin') {
+            document.getElementById('adminView').classList.add('active');
+        }
+    }
+
+    // Logic chuyển Tab trong App của Khách hàng
+    function switchTab(tabId, element) {
+        document.querySelectorAll('.app-section').forEach(e => e.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        
+        // Update active class on nav icons
+        document.querySelectorAll('.nav-bottom a').forEach(a => a.classList.remove('active'));
+        element.classList.add('active');
+    }
+</script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

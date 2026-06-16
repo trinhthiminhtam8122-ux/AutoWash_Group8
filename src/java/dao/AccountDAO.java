@@ -151,7 +151,7 @@ public class AccountDAO {
                     if (rs.next()) {
                         generatedId = rs.getInt(1);
                     }
-                }
+                }   
             }
         } finally {
             if (rs != null) rs.close();

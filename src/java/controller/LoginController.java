@@ -23,7 +23,7 @@ public class LoginController extends HttpServlet {
         response.setContentType("text/html;charset=UTF-8");
         request.setCharacterEncoding("UTF-8");
 
-        String username = request.getParameter("username"); // Dùng SĐT hoặc email/username
+        String username = request.getParameter("username"); // Dùng SĐT
         String password = request.getParameter("password");
         
         try {
@@ -45,7 +45,7 @@ public class LoginController extends HttpServlet {
                     StaffDAO staffDAO = new StaffDAO();
                     Staff staff = staffDAO.getStaffByAccountID(account.getAccountID());
                     session.setAttribute("STAFF_INFO", staff);
-                    session.setAttribute("CURRENT_VIEW", "dashboard");
+                    session.setAttribute("CURRENT_VIEW", "admin");
                     response.sendRedirect("main"); // Có thể chuyển hướng tới trang quản lý riêng
                 }
             } else {

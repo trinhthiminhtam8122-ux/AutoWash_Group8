@@ -302,6 +302,24 @@
         .btn-use { background: linear-gradient(135deg, #a78bfa, #c4b5fd); color: white; border: none; padding: 0.6rem 1.8rem; border-radius: 2rem; font-weight: 700; font-size: 0.95rem; cursor: pointer; box-shadow: 0 4px 10px rgba(167, 139, 250, 0.3); transition: 0.3s;}
         .btn-use:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(167, 139, 250, 0.4); }
         
+        .booking-shortcut {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.9rem 1.3rem;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            color: #ffffff !important;
+            font-weight: 700;
+            text-decoration: none;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .booking-shortcut:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 30px rgba(37, 99, 235, 0.24);
+        }
+
         .points-plus { font-size: 1.2rem; font-weight: 800; color: #16a34a; background: #dcfce7; padding: 0.4rem 1rem; border-radius: 0.8rem; }
 
         /* Footer */
@@ -526,6 +544,9 @@
             <div>
                 <div class="section-header">
                     <h3>My Vehicles</h3>
+                    <a href="javascript:void(0)" onclick="navTo('booking')" class="booking-shortcut">
+                        <i class="fa-solid fa-car-burst"></i> Quick Booking
+                    </a>
                 </div>
                 
                 <div class="vehicles-grid">
@@ -673,7 +694,21 @@
                 </div>
                 <div class="input-group">
                     <label>Brand</label>
-                    <input type="text" name="brand" id="modalBrand" class="input-field" placeholder="Toyota" required>
+                    <select name="brand" id="modalBrand" class="input-field" required style="appearance: auto;">
+                        <option value="" disabled selected>Select brand...</option>
+                        <option value="Toyota">Toyota</option>
+                        <option value="Honda">Honda</option>
+                        <option value="Ford">Ford</option>
+                        <option value="Chevrolet">Chevrolet</option>
+                        <option value="Hyundai">Hyundai</option>
+                        <option value="Kia">Kia</option>
+                        <option value="Mazda">Mazda</option>
+                        <option value="Mercedes-Benz">Mercedes-Benz</option>
+                        <option value="BMW">BMW</option>
+                        <option value="Audi">Audi</option>
+                        <option value="VinFast">VinFast</option>
+                        <option value="Other">Other</option>
+                    </select>
                 </div>
                 <div class="input-group">
                     <label>Model</label>
@@ -681,7 +716,16 @@
                 </div>
                 <div class="input-group">
                     <label>Vehicle Type</label>
-                    <input type="text" name="vehicleType" id="modalType" class="input-field" placeholder="Sedan" required>
+                    <select name="vehicleType" id="modalType" class="input-field" required style="appearance: auto;">
+                        <option value="" disabled selected>Select vehicle type...</option>
+                        <option value="Sedan">Sedan</option>
+                        <option value="SUV">SUV</option>
+                        <option value="Hatchback">Hatchback</option>
+                        <option value="Pickup Truck">Pickup</option>
+                        <option value="Coupe">Coupe</option>
+                        <option value="Minivan">Minivan / MPV</option>
+                        <option value="Other">Other</option>
+                    </select>
                 </div>
                 <div class="input-group">
                     <label>Vehicle Color</label>

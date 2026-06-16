@@ -210,4 +210,60 @@ public class CustomerDAO {
         }
         return exist;
     }
+
+    // Kiểm tra Email đã tồn tại trong Customer (dành cho đăng ký mới)
+    public boolean checkEmailExist(String email) throws ClassNotFoundException, SQLException {
+        boolean exist = false;
+        Connection conn = null;
+        PreparedStatement stm = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtils.getConnection();
+            if (conn != null) {
+                String sql = "SELECT CustomerID FROM Customer WHERE Email = ?";
+                stm = conn.prepareStatement(sql);
+                stm.setString(1, email);
+                rs = stm.executeQuery();
+                if (rs.next()) {
+                    exist = true;
+                }
+            }
+        } finally {
+            if (rs != null)
+                rs.close();
+            if (stm != null)
+                stm.close();
+            if (conn != null)
+                conn.close();
+        }
+        return exist;
+    }
+
+    // Kiểm tra Phone đã tồn tại trong Customer (dành cho đăng ký mới)
+    public boolean checkPhoneExist(String phone) throws ClassNotFoundException, SQLException {
+        boolean exist = false;
+        Connection conn = null;
+        PreparedStatement stm = null;
+        ResultSet rs = null;
+        try {
+            conn = DBUtils.getConnection();
+            if (conn != null) {
+                String sql = "SELECT CustomerID FROM Customer WHERE Phone = ?";
+                stm = conn.prepareStatement(sql);
+                stm.setString(1, phone);
+                rs = stm.executeQuery();
+                if (rs.next()) {
+                    exist = true;
+                }
+            }
+        } finally {
+            if (rs != null)
+                rs.close();
+            if (stm != null)
+                stm.close();
+            if (conn != null)
+                conn.close();
+        }
+        return exist;
+    }
 }

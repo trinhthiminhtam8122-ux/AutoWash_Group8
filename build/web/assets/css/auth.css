@@ -42,7 +42,9 @@
 .signup-link a { color: var(--primary); text-decoration: none; }
 
 .error-msg { background: #fee2e2; color: #ef4444; padding: 10px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; margin-bottom: 1.5rem; text-align: left;}
-
+.error-text { color: #ef4444; font-size: 0.85rem; font-weight: 600; margin-top: 0.4rem; display: block; text-align: left; }
+.input-field.error { border-color: #ef4444; }
+.input-field.error:focus { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1); }
 .btn-outline { border: 2px solid #3b82f6; color: #3b82f6; padding: 0.5rem 1.5rem; border-radius: 6px; font-weight: 600; text-decoration: none; }
 .btn-solid { background: #2563eb; color: white; padding: 0.5rem 1.5rem; border-radius: 6px; font-weight: 600; text-decoration: none; }
 

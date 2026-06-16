@@ -19,12 +19,8 @@ public class LogoutController extends HttpServlet {
         if (session != null) {
             session.invalidate(); // Xóa phiên đăng nhập
         }
-        
-        if (session != null) {
-            session.setAttribute("CURRENT_VIEW", "login");
-        } else {
-            request.getSession().setAttribute("CURRENT_VIEW", "login");
-        }
+      
+        request.getSession(true).setAttribute("CURRENT_VIEW", "dashBoard");
         response.sendRedirect("main");
     }
 

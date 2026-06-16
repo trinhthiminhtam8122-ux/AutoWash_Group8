@@ -3,27 +3,18 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/D:/pro/project/src/java/dao/VehicleDAO.java</file>
-            <file>file:/D:/pro/project/src/java/dao/StaffDAO.java</file>
-            <file>file:/D:/pro/project/src/java/controller/UpdateProfileController.java</file>
-            <file>file:/D:/pro/project/web/index.jsp</file>
-            <file>file:/D:/pro/project/src/java/controller/UpdateAvatarController.java</file>
-            <file>file:/D:/pro/project/src/java/dao/RewardDAO.java</file>
-            <file>file:/D:/pro/project/src/java/controller/RegisterController.java</file>
-            <file>file:/D:/pro/project/src/java/controller/LoginController.java</file>
-            <file>file:/D:/pro/project/src/java/controller/VehicleController.java</file>
-            <file>file:/D:/pro/project/src/java/controller/ImageServlet.java</file>
-            <file>file:/D:/pro/project/src/java/dao/TierDAO.java</file>
-            <file>file:/D:/pro/project/src/java/controller/MainController.java</file>
-            <file>file:/D:/pro/project/web/WEB-INF/views/profile.jsp</file>
-            <file>file:/D:/pro/project/src/java/dto/Account.java</file>
-            <file>file:/D:/pro/project/src/java/dao/CustomerDAO.java</file>
-            <file>file:/D:/pro/project/src/java/dao/AccountDAO.java</file>
-            <file>file:/D:/pro/project/web/assets/css/auth.css</file>
-            <file>file:/D:/pro/project/src/java/dbutils/DBUtils.java</file>
-            <file>file:/D:/pro/project/src/java/controller/LogoutController.java</file>
-            <file>file:/D:/pro/project/src/java/dto/Customer.java</file>
-            <file>file:/D:/pro/project/web/WEB-INF/views/register.jsp</file>
+            <file>file:/D:/New%20folder/src/java/dao/ServiceDAO.java</file>
+            <file>file:/D:/New%20folder/web/WEB-INF/views/dashboard.jsp</file>
+            <file>file:/D:/New%20folder/web/WEB-INF/views/login.jsp</file>
+            <file>file:/D:/New%20folder/src/java/controller/HistoryController.java</file>
+            <file>file:/D:/New%20folder/src/java/dbutils/DBUtils.java</file>
+            <file>file:/D:/New%20folder/src/java/controller/MainController.java</file>
+            <file>file:/D:/New%20folder/src/java/controller/BookingController.java</file>
+            <file>file:/D:/New%20folder/src/java/dao/BookingDAO.java</file>
+            <file>file:/D:/New%20folder/src/java/dto/Booking.java</file>
+            <file>file:/D:/New%20folder/src/java/dao/AccountDAO.java</file>
+            <file>file:/D:/New%20folder/web/WEB-INF/views/booking.jsp</file>
+            <file>file:/D:/New%20folder/web/WEB-INF/views/history.jsp</file>
         </group>
     </open-files>
 </project-private>

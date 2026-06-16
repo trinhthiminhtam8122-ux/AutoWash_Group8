@@ -1,6 +1,8 @@
 package controller;
 
+import dao.ServiceDAO;
 import java.io.IOException;
+import java.sql.SQLException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -40,6 +42,7 @@ public class MainController extends HttpServlet {
         switch (action) {
             case "home":
             case "dashboard":
+                loadActiveServices(request);
                 viewPage = "dashboard.jsp";
                 break;
 
@@ -50,6 +53,35 @@ public class MainController extends HttpServlet {
             case "register":
                 viewPage = "register.jsp";
                 break;
+
+            case "booking":
+                // Kiểm tra đăng nhập trước khi vào trang booking
+                if (session.getAttribute("LOGIN_USER") == null) {
+                    session.setAttribute("CURRENT_VIEW", "login");
+                    response.sendRedirect("main");
+                    return;
+                }
+                // Forward to BookingController to handle booking page preparation
+                request.getRequestDispatcher("/BookingController").forward(request, response);
+                return;
+
+            case "history":
+                if (session.getAttribute("LOGIN_USER") == null) {
+                    session.setAttribute("CURRENT_VIEW", "login");
+                    response.sendRedirect("main");
+                    return;
+                }
+                request.getRequestDispatcher("/HistoryController").forward(request, response);
+                return;
+
+            case "admin":
+                if (session.getAttribute("LOGIN_USER") == null) {
+                    session.setAttribute("CURRENT_VIEW", "login");
+                    response.sendRedirect("main");
+                    return;
+                }
+                request.getRequestDispatcher("/AdminController").forward(request, response);
+                return;
 
             case "profile":
                 // Kiểm tra đăng nhập trước khi vào trang profile
@@ -66,11 +98,21 @@ public class MainController extends HttpServlet {
                 break;
 
             default:
+                loadActiveServices(request);
                 viewPage = "dashboard.jsp";
                 break;
         }
 
         request.getRequestDispatcher(VIEW_DIR + viewPage).forward(request, response);
+    }
+
+    private void loadActiveServices(HttpServletRequest request) {
+        try {
+            ServiceDAO serviceDAO = new ServiceDAO();
+            request.setAttribute("serviceList", serviceDAO.getAllActiveServices());
+        } catch (ClassNotFoundException | SQLException ex) {
+            ex.printStackTrace();
+        }
     }
 
     @Override
