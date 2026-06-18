@@ -11,15 +11,6 @@ import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 
-/**
- * WebSocket Chat Endpoint - Xử lý kết nối chat realtime.
- *
- * URL: /chat/{accountId}
- * Message format:
- *   Client gửi:     "receiverAccountId|messageText"
- *   Server gửi cho receiver: "senderAccountId|messageText"
- *   Server echo cho sender:  "ME|messageText"
- */
 @ServerEndpoint("/chat/{accountId}")
 public class ChatEndpoint {
 

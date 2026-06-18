@@ -323,7 +323,7 @@
             </a>
             <a href="#" class="menu-item">
                 <i class="fa-regular fa-user"></i> Customer
-            </a>
+            </a>    
             <a href="${pageContext.request.contextPath}/main?action=admin" class="menu-item active">
                 <i class="fa-regular fa-calendar-check"></i> Booking
             </a>

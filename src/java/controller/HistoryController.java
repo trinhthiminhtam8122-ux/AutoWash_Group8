@@ -1,3 +1,7 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
+ */
 package controller;
 
 import dao.BookingDAO;
@@ -5,57 +9,61 @@ import dao.CustomerDAO;
 import dto.Account;
 import dto.Booking;
 import dto.Customer;
-
+import java.io.IOException;
+import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.List;
 
+/**
+ *
+ * @author Duong
+ */
 @WebServlet(name = "HistoryController", urlPatterns = {"/HistoryController"})
 public class HistoryController extends HttpServlet {
 
-    private static final String VIEW_PAGE = "/WEB-INF/views/history.jsp";
+
+    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        response.setContentType("text/html;charset=UTF-8");
+        HttpSession session=request.getSession() ;
+        Customer customer =(Customer) session.getAttribute("CUSTOMER_INFO");
+        Account account =(Account) session.getAttribute("LOGIN_USER");
+        if(account==null|| customer==null){
+             session.setAttribute("CURRENT_VIEW", "login");
+            response.sendRedirect("main");
+            return;
+        }
+        CustomerDAO customerDao=new CustomerDAO();
+        BookingDAO bookingDao=new BookingDAO();
+        try{
+            Customer cus =customerDao.getCustomerByAccountID(customer.getAccountID());
+            if(cus!=null){
+                List<Booking> bookingList =bookingDao.getBookingsByCustomer(cus.getCustomerID());
+                request.setAttribute("bookings", bookingList);
+                request.setAttribute("customer", customer.getFullName());
+            }
+        }catch(Exception e){
+            log("Error in HistoryController: " + e.getMessage());
+        }
+        request.getRequestDispatcher("/WEB-INF/views/history.jsp").forward(request, response);
+    }
+
+   
+ 
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        request.setCharacterEncoding("UTF-8");
-        response.setContentType("text/html;charset=UTF-8");
-
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("LOGIN_USER") == null) {
-            response.sendRedirect(request.getContextPath() + "/main?action=login");
-            return;
-        }
-
-        Account account = (Account) session.getAttribute("LOGIN_USER");
-        CustomerDAO customerDAO = new CustomerDAO();
-        BookingDAO bookingDAO = new BookingDAO();
-
-        try {
-            Customer customer = customerDAO.getCustomerByAccountID(account.getAccountID());
-            if (customer != null) {
-                List<Booking> bookings = bookingDAO.getBookingsByCustomer(customer.getCustomerID());
-                request.setAttribute("bookings", bookings);
-                request.setAttribute("customerName", customer.getFullName());
-            } 
-            request.getRequestDispatcher(VIEW_PAGE).forward(request, response);
-        } catch (ClassNotFoundException | SQLException ex) {
-            ex.printStackTrace();
-            request.setAttribute("ERROR_MSG", "Unable to load booking history. Error: " + ex.getMessage());
-            request.getRequestDispatcher(VIEW_PAGE).forward(request, response);
-        }
+        processRequest(request, response);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        doGet(request, response);
+        processRequest(request, response);
     }
-        
 }

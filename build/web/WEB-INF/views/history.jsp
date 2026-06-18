@@ -1,3 +1,5 @@
+<%@page import="java.sql.Date"%>
+<%@page import="java.text.SimpleDateFormat"%>
 <%@page import="dto.Customer"%>
 <%@page import="dto.Account"%>
 <%@ page import="java.util.List" %>
@@ -6,12 +8,21 @@
 <%
     request.setCharacterEncoding("UTF-8");
     response.setContentType("text/html;charset=UTF-8");
-    List<Booking> bookings = (List<Booking>) request.getAttribute("bookings");
-    String customerName = request.getAttribute("customerName") != null ? (String) request.getAttribute("customerName") : "Customer";
+    List<Booking> bookingList = (List<Booking>) request.getAttribute("bookings");
+    String customerName = (String) request.getAttribute("customer");
 
-    Account acc = (Account) session.getAttribute("LOGIN_USER");
-    Customer customer = (Customer) session.getAttribute("CUSTOMER_INFO");
-    String userName = (customer != null) ? customer.getFullName() : (acc != null ? acc.getUsername() : "Guest");
+    Account account = (Account) request.getAttribute("LOGIN_USER");
+    Customer customer = (Customer) request.getAttribute("CUSTOMER_INFO");
+    String userName;
+    if (customer != null) {
+        userName = customer.getFullName();
+    } else if (account != null) {
+        userName = account.getUsername();
+    } else {
+        userName = "GUEST";
+    }
+
+
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -81,12 +92,27 @@
                 text-transform: capitalize;
                 text-align: center;
             }
-            .status-badge.pending { background: #fef3c7; color: #d97706; }
-            .status-badge.confirmed { background: #dbeafe; color: #2563eb; }
-            .status-badge.washing { background: #e0e7ff; color: #4f46e5; }
-            .status-badge.completed { background: #dcfce7; color: #16a34a; }
-            .status-badge.cancelled { background: #fee2e2; color: #dc2626; }
-            
+            .status-badge.pending {
+                background: #fef3c7;
+                color: #d97706;
+            }
+            .status-badge.confirmed {
+                background: #dbeafe;
+                color: #2563eb;
+            }
+            .status-badge.washing {
+                background: #e0e7ff;
+                color: #4f46e5;
+            }
+            .status-badge.completed {
+                background: #dcfce7;
+                color: #16a34a;
+            }
+            .status-badge.cancelled {
+                background: #fee2e2;
+                color: #dc2626;
+            }
+
             .empty-history {
                 text-align: center;
                 padding: 4rem 2rem;
@@ -129,14 +155,15 @@
                 </div>
                 <div class="nav-right">
                     <div class="user-info">
-                        <% if (customer != null && customer.getAvatarUrl() != null && !customer.getAvatarUrl().isEmpty()) {%>
+                        <% if (account != null && customer.getAvatarUrl() != null && !customer.getAvatarUrl().isEmpty()) {
+                        %>
                         <img src="<%= request.getContextPath() + (customer.getAvatarUrl().startsWith("/") ? "" : "/") + customer.getAvatarUrl()%>" alt="Avatar">
                         <% } else { %>
                         <i class="fa-regular fa-user"></i>
                         <% }%>
-                        <span><%= userName%></span>
+                        <span><%=userName %></span>
                     </div>
-                    <% if (acc != null) { %>
+                    <% if (account != null) { %>
                     <a href="LogoutController" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
                     <% } else { %>
                     <a href="javascript:void(0)" onclick="navTo('login')" class="logout-btn"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
@@ -149,62 +176,75 @@
                     <h1>Booking History</h1>
                     <p>Track all your past and upcoming car wash appointments.</p>
                 </div>
-                
+
                 <% String successMsg = (String) session.getAttribute("SUCCESS_MSG");
-                   if (successMsg != null) { 
-                       session.removeAttribute("SUCCESS_MSG");
+                    if (successMsg != null) {
+                        session.removeAttribute("SUCCESS_MSG");
                 %>
                 <div class="booking-alert success-alert" style="margin-bottom: 1rem;">
                     <i class="fa-solid fa-circle-check"></i>
-                    <span><%= successMsg %></span>
+                    <span><%= successMsg%></span>
                 </div>
                 <% } %>
-                
+
                 <% String errorMsg = (String) request.getAttribute("ERROR_MSG");
-                   if (errorMsg != null) { %>
+                    if (errorMsg != null) {%>
                 <div class="booking-alert error-alert" style="margin-bottom: 1rem;">
                     <i class="fa-solid fa-circle-xmark"></i>
-                    <span><%= errorMsg %></span>
+                    <span><%= errorMsg%></span>
                 </div>
                 <% } %>
 
                 <div class="booking-list">
-                    <% if (bookings == null || bookings.isEmpty()) { %>
-                        <div class="empty-history">
-                            <i class="fa-solid fa-clock-rotate-left"></i>
-                            <h3>No bookings found</h3>
-                            <p>You haven't made any bookings yet.</p>
-                            <a href="javascript:void(0)" onclick="navTo('booking')" class="btn btn-primary">Book a Wash</a>
-                        </div>
-                    <% } else { 
-                        for (Booking b : bookings) { 
-                            
-                            String statusClass = b.getStatus() != null ? b.getStatus().toLowerCase() : "pending";
+                    <% if (bookingList == null || bookingList.isEmpty()) { %>
+                    <div class="empty-history">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <h3>No bookings found</h3>
+                        <p>You haven't made any bookings yet.</p>
+                        <a href="javascript:void(0)" onclick="navTo('booking')" class="btn btn-primary">Book a Wash</a>
+                    </div>
+                    <% } else {
+                        for (Booking b : bookingList) {
+
+                            String statusClass = b.getStatus();
+                            if (statusClass != null) {
+                                statusClass = b.getStatus().toLowerCase();
+                            } else {
+                                statusClass = "pending";
+                            }
                     %>
-                        <div class="history-card">
-                            <div class="info-group">
-                                <span class="label">Date & Time</span>
-                                <span class="value"><%= (b.getScheduledDate() != null ? new java.text.SimpleDateFormat("dd/MM/yyyy").format(b.getScheduledDate()) : "N/A") %> - <%= (b.getScheduledTime() != null ? String.format("%tR", b.getScheduledTime()) : "N/A") %></span>
-                            </div>
-                            <div class="info-group">
-                                <span class="label">Vehicle</span>  
-                                <span class="value"><%= b.getVehiclePlateSnapshot() %></span>
-                            </div>
-                            <div class="info-group">
-                                <span class="label">Service</span>
-                                <span class="value"><%= b.getServiceType() %></span>
-                            </div>
-                            <div class="info-group">
-                                <span class="label">Price</span>
-                                <span class="value"><%= String.format("%,d", b.getPrice().longValue()).replace(',', '.') %>đ</span>
-                            </div>
-                            <div class="info-group">
-                                <span class="label">Status</span>
-                                <span class="status-badge <%= statusClass %>"><%= b.getStatus() %></span>
-                            </div>
+                    <div class="history-card">
+                        <div class="info-group">
+                            <span class="label">Date & Time</span>
+                            <span class="value"><%if(b.getScheduledDate()!=null){
+                                SimpleDateFormat formatt=new SimpleDateFormat("dd/MM/yyyy");
+                                String date=null;
+                                   date=formatt.format(b.getScheduledDate());
+                                   out.print(date);
+                                }
+                                else {
+                                out.print("N/A");
+                        }%> </span>
                         </div>
+                        <div class="info-group">
+                            <span class="label">Vehicle</span>  
+                            <span class="value"><%= b.getVehiclePlateSnapshot()%></span>
+                        </div>
+                        <div class="info-group">
+                            <span class="label">Service</span>
+                            <span class="value"><%= b.getServiceType()%></span>
+                        </div>
+                        <div class="info-group">
+                            <span class="label">Price</span>
+                            <span class="value"><%= String.format("%,d", b.getPrice().longValue()).replace(',', '.')%>đ</span>
+                        </div>
+                        <div class="info-group">
+                            <span class="label">Status</span>
+                            <span class="status-badge <%= statusClass%>"><%= b.getStatus()%></span>
+                        </div>
+                    </div>
                     <%  }
-                    } %>
+                        }%>
                 </div>
             </main>
         </div>

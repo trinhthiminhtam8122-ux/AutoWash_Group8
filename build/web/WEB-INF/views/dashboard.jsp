@@ -48,7 +48,7 @@
             <div class="nav-links">
                 <a href="javascript:void(0)" onclick="navTo('dashboard')">Home</a>
                 <a href="javascript:void(0)" onclick="navTo('booking')">Booking</a>
-                <a href="#">Services</a>
+                <a href="javascript:void(0)" onclick="navTo('history')">History</a>
                 <a href="javascript:void(0)" onclick="navTo('profile')">Profile</a>
                 <% if (acc != null && ("Admin".equals(acc.getRole()) || "Staff".equals(acc.getRole()))) { %>
                 <a href="javascript:void(0)" onclick="navTo('admin')" style="color:var(--primary); font-weight:700;">Admin Panel</a>
