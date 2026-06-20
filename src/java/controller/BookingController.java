@@ -4,11 +4,13 @@ import dao.BookingDAO;
 import dao.CustomerDAO;
 import dao.ServiceDAO;
 import dao.VehicleDAO;
+import dao.TierDAO;
 import dto.Account;
 import dto.Booking;
 import dto.Customer;
 import dto.Service;
 import dto.Vehicle;
+import dto.Tier;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -30,8 +32,6 @@ import java.util.List;
 public class BookingController extends HttpServlet {
 
     private static final String VIEW_PAGE = "/WEB-INF/views/booking.jsp";
-    private static final BigDecimal BASIC_WASH_PRICE = new BigDecimal("120000");
-    private static final BigDecimal PREMIUM_WASH_PRICE = new BigDecimal("350000");
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -47,8 +47,6 @@ public class BookingController extends HttpServlet {
 
         Account account = (Account) session.getAttribute("LOGIN_USER");
         CustomerDAO customerDAO = new CustomerDAO();
-        VehicleDAO vehicleDAO = new VehicleDAO();
-        ServiceDAO serviceDAO = new ServiceDAO();
 
         try {
             Customer customer = customerDAO.getCustomerByAccountID(account.getAccountID());
@@ -56,13 +54,7 @@ public class BookingController extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/main?action=login");
                 return;
             }
-
-            List<Vehicle> vehicles = vehicleDAO.getVehiclesByCustomerID(customer.getCustomerID());
-            List<Service> services = serviceDAO.getAllActiveServices();
-            request.setAttribute("vehicles", vehicles);
-            request.setAttribute("serviceList", services);
-            request.setAttribute("customerName", customer.getFullName());
-            request.getRequestDispatcher(VIEW_PAGE).forward(request, response);
+            forwardBookingPage(request, response, customer);
         } catch (ClassNotFoundException | SQLException ex) {
             request.setAttribute("ERROR_MSG", "Unable to load booking page. Please try again later.");
             request.getRequestDispatcher(VIEW_PAGE).forward(request, response);
@@ -99,7 +91,8 @@ public class BookingController extends HttpServlet {
                 return;
             }
 
-            int vehicleID = 0;
+            // --- Validate vehicleID ---
+            int vehicleID;
             try {
                 vehicleID = Integer.parseInt(vehicleIdValue);
             } catch (NumberFormatException ex) {
@@ -108,7 +101,8 @@ public class BookingController extends HttpServlet {
                 return;
             }
 
-            int serviceID = 0;
+            // --- Validate serviceID ---
+            int serviceID;
             try {
                 serviceID = Integer.parseInt(serviceIdValue);
             } catch (NumberFormatException ex) {
@@ -124,12 +118,14 @@ public class BookingController extends HttpServlet {
                 return;
             }
 
+            // --- Validate date ---
             if (scheduledDateValue == null || scheduledDateValue.trim().isEmpty()) {
                 request.setAttribute("ERROR_MSG", "Please choose a booking date.");
                 forwardBookingPage(request, response, customer);
                 return;
             }
 
+            // --- Validate time ---
             if (scheduledTimeValue == null || scheduledTimeValue.trim().isEmpty()) {
                 request.setAttribute("ERROR_MSG", "Please select a time slot.");
                 forwardBookingPage(request, response, customer);
@@ -147,12 +143,45 @@ public class BookingController extends HttpServlet {
                 return;
             }
 
+            // --- Date not in the past ---
             if (scheduledDate.isBefore(LocalDate.now())) {
                 request.setAttribute("ERROR_MSG", "Booking date cannot be in the past.");
                 forwardBookingPage(request, response, customer);
                 return;
             }
 
+            // --- Tier booking window ---
+            TierDAO tierDAO = new TierDAO();
+            Tier tier = tierDAO.getTierByID(customer.getTierID());
+            int bookingWindow = (tier != null) ? tier.getBookingWindow() : 7;
+            LocalDate maxDate = LocalDate.now().plusDays(bookingWindow);
+            if (scheduledDate.isAfter(maxDate)) {
+                String tierName = (tier != null) ? tier.getTierName() : "Member";
+                request.setAttribute("ERROR_MSG",
+                        "You are " + tierName + ". You can only book " + bookingWindow + " days ahead.");
+                forwardBookingPage(request, response, customer);
+                return;
+            }
+
+            // --- Rule 1: Vehicle không được có booking Pending ---
+            if (bookingDAO.hasPendingBookingForVehicle(vehicleID)) {
+                request.setAttribute("ERROR_MSG",
+                        "This vehicle already has a pending booking. Please cancel it before creating a new one.");
+                forwardBookingPage(request, response, customer);
+                return;
+            }
+
+            // --- Rule 2: Kiểm tra slot đã có booking Pending chưa ---
+            Date sqlDate = Date.valueOf(scheduledDate);
+            Time sqlTime = Time.valueOf(scheduledTime);
+            if (bookingDAO.isSlotTaken(sqlDate, sqlTime)) {
+                request.setAttribute("ERROR_MSG",
+                        "This time slot is already booked. Please choose a different date or time.");
+                forwardBookingPage(request, response, customer);
+                return;
+            }
+
+            // --- Verify vehicle belongs to customer ---
             Vehicle vehicle = vehicleDAO.getVehicleByID(vehicleID, customer.getCustomerID());
             if (vehicle == null) {
                 request.setAttribute("ERROR_MSG", "Selected vehicle is not available for booking.");
@@ -160,6 +189,7 @@ public class BookingController extends HttpServlet {
                 return;
             }
 
+            // --- Create booking ---
             Booking booking = new Booking(
                     0,
                     customer.getCustomerID(),
@@ -168,22 +198,22 @@ public class BookingController extends HttpServlet {
                     selectedService.getPrice(),
                     vehicle.getLicensePlate(),
                     customer.getFullName(),
-                    Date.valueOf(scheduledDate),
-                    Time.valueOf(scheduledTime),
+                    sqlDate,
+                    sqlTime,
                     null,
                     "Pending",
-                    serviceID
-            );
+                    serviceID);
 
             boolean created = bookingDAO.createBooking(booking);
-
             if (created) {
-                session.setAttribute("SUCCESS_MSG", "Booking created successfully. We will notify you once the wash is confirmed.");
+                session.setAttribute("SUCCESS_MSG",
+                        "Booking created successfully. We will notify you once the wash is confirmed.");
                 response.sendRedirect(request.getContextPath() + "/main?action=history");
             } else {
                 request.setAttribute("ERROR_MSG", "Unable to create booking at this time. Please try again.");
                 forwardBookingPage(request, response, customer);
             }
+
         } catch (ClassNotFoundException | SQLException ex) {
             request.setAttribute("ERROR_MSG", "An unexpected error occurred: " + ex.getMessage());
             Customer customer = null;
@@ -199,17 +229,29 @@ public class BookingController extends HttpServlet {
         }
     }
 
+    // -----------------------------------------------------------------------
+    // Helper
+    // -----------------------------------------------------------------------
     private void forwardBookingPage(HttpServletRequest request, HttpServletResponse response, Customer customer)
             throws ServletException, IOException {
         try {
+            BookingDAO bookingDAO = new BookingDAO();
+            bookingDAO.autoCancelExpiredBookings();
             VehicleDAO vehicleDAO = new VehicleDAO();
             ServiceDAO serviceDAO = new ServiceDAO();
+            TierDAO tierDAO = new TierDAO();
+
+            Tier tier = tierDAO.getTierByID(customer.getTierID());
+
             request.setAttribute("vehicles", vehicleDAO.getVehiclesByCustomerID(customer.getCustomerID()));
             request.setAttribute("serviceList", serviceDAO.getAllActiveServices());
             request.setAttribute("customerName", customer.getFullName());
+            request.setAttribute("tierName", tier != null ? tier.getTierName() : "Member");
+            request.setAttribute("bookingWindow", tier != null ? tier.getBookingWindow() : 7);
         } catch (ClassNotFoundException | SQLException ex) {
             request.setAttribute("ERROR_MSG", "Unable to load booking options. Please reload the page.");
         }
         request.getRequestDispatcher(VIEW_PAGE).forward(request, response);
     }
+
 }

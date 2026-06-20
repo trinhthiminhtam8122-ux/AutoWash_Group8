@@ -11,13 +11,13 @@
 
     String userName = "Guest";
     int currentPoints = 0;
-    String tierName = "Gold member";
+    String tierName = "Member";
 
     if (customer != null) {
         userName = customer.getFullName();
         currentPoints = customer.getCurrentPoints();
         if (customer.getTierID() == 1) {
-            tierName = "Bronze member";
+            tierName = "Member";
         } else if (customer.getTierID() == 2) {
             tierName = "Silver member";
         } else if (customer.getTierID() == 3) {

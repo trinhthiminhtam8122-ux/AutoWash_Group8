@@ -125,31 +125,42 @@
 
                                 <div class="service-grid">
                                     <% if (serviceList != null && !serviceList.isEmpty()) {
-                                        for (Service s : serviceList) {
-                                            boolean isPremium = s.getServiceName() != null && (s.getServiceName().toLowerCase().contains("premium") || s.getServiceName().toLowerCase().contains("full") || s.getServiceName().toLowerCase().contains("detail"));
+                                            for (Service s : serviceList) {
+                                                boolean isPremium = s.getServiceName() != null && (s.getServiceName().toLowerCase().contains("premium") || s.getServiceName().toLowerCase().contains("full") || s.getServiceName().toLowerCase().contains("detail"));
                                     %>
                                     <button type="button" class="service-card" 
-                                            data-service-id="<%= s.getServiceID() %>" 
-                                            data-service-name="<%= s.getServiceName() %>" 
-                                            data-service-price="<%= s.getPrice() %>">
-                                        <div class="service-badge <%= isPremium ? "premium" : "" %>"><%= s.getServiceName() %></div>
-                                        <p><%= s.getDescription() != null ? s.getDescription() : "High-quality wash service for your vehicle." %></p>
+                                            data-service-id="<%= s.getServiceID()%>" 
+                                            data-service-name="<%= s.getServiceName()%>" 
+                                            data-service-price="<%= s.getPrice()%>">
+                                        <div class="service-badge <%= isPremium ? "premium" : ""%>"><%= s.getServiceName()%></div>
+                                        <p><%= s.getDescription() != null ? s.getDescription() : "High-quality wash service for your vehicle."%></p>
                                         <div class="service-footer">
-                                            <span><%= String.format("%,d", s.getPrice().longValue()).replace(',', '.') %>đ</span>
+                                            <span><%= String.format("%,d", s.getPrice().longValue()).replace(',', '.')%>đ</span>
                                             <i class="fa-solid fa-check"></i>
                                         </div>
                                     </button>
                                     <%  }
                                     } else { %>
-                                        <p style="grid-column: 1/-1; text-align: center; color: #666;">No services available at the moment.</p>
-                                    <% } %>
+                                    <p style="grid-column: 1/-1; text-align: center; color: #666;">No services available at the moment.</p>
+                                    <% }%>
                                 </div>
                             </div>
 
                             <div class="date-time-grid">
                                 <div class="field-group">
                                     <label for="scheduledDate">Booking Date</label>
-                                    <input type="date" id="scheduledDate" name="scheduledDate" required />
+                                    <input
+                                        type="date"
+                                        id="scheduledDate"
+                                        name="scheduledDate"
+                                        required
+                                        min="<%= java.time.LocalDate.now()%>"
+                                        max="<%= java.time.LocalDate.now().plusDays(
+                                                request.getAttribute("bookingWindow") != null
+                                                ? (Integer) request.getAttribute("bookingWindow")
+                                                : 7
+                                        )%>"
+                                        />
                                 </div>
                                 <div class="field-group">
                                     <label for="scheduledTime">Time Slot</label>
@@ -204,6 +215,38 @@
                     </div>
 
                     <aside class="info-panel">
+                        <div class="info-card">
+                            <h3>Your Membership</h3>
+                            <div class="info-row">
+                                <span class="label">Current Tier:</span>
+                                <strong class="value">
+                                    <%= request.getAttribute("tierName") != null
+                                            ? request.getAttribute("tierName")
+                                            : "Member"%>
+                                </strong>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Booking Window:</span>
+                                <strong class="value">
+                                    ${bookingWindow} days
+                                </strong>
+                            </div>
+
+                            <div class="info-row">
+                                <span class="label">Available Until:</span>
+
+                                <strong class="value">
+
+                                    <%= java.time.LocalDate.now()
+                                            .plusDays(
+                                                    request.getAttribute("bookingWindow") != null
+                                                    ? (Integer) request.getAttribute("bookingWindow")
+                                                    : 7
+                                            )%>
+
+                                </strong>
+                            </div>
+                        </div>
                         <div class="info-card">
                             <h3>Why book now?</h3>
                             <p>Quick booking reserves your vehicle for the next available wash slot and preserves your vehicle snapshot at booking time.</p>

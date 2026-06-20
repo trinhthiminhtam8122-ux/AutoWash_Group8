@@ -56,7 +56,7 @@
         phone = customer.getPhone();
         currentPoints = customer.getCurrentPoints();
         avatarUrl = customer.getAvatarUrl() != null ? customer.getAvatarUrl() : "";
-        if (customer.getTierID() == 1) tierName = "Bronze member";
+        if (customer.getTierID() == 1) tierName = "Member member";
         else if (customer.getTierID() == 2) tierName = "Silver member";
         else if (customer.getTierID() == 3) tierName = "Gold member";
         else if (customer.getTierID() == 4) tierName = "Platinum member";
