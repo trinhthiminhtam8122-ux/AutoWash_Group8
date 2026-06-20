@@ -7,6 +7,7 @@ import dto.Vehicle;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Scanner;
 import java.util.UUID;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
@@ -57,7 +58,8 @@ public class VehicleController extends HttpServlet {
         HttpSession session = request.getSession();
         Customer customer = (Customer) session.getAttribute("CUSTOMER_INFO");
         if (customer == null) {
-            response.sendRedirect("login.jsp");
+            session.setAttribute("CURRENT_VIEW", "login");
+            response.sendRedirect("main");
             return;
         }
 
@@ -70,9 +72,9 @@ public class VehicleController extends HttpServlet {
             log("Multipart parsing error: " + e.getMessage());
         }
 
-        String action = getParameterValue(request, "action");
+        String action = request.getParameter("action");
         if (action == null) {
-            response.sendRedirect("profile.jsp");
+            response.sendRedirect("main?action=profile");
             return;
         }
 
@@ -80,16 +82,20 @@ public class VehicleController extends HttpServlet {
             VehicleDAO vehicleDAO = new VehicleDAO();
 
             if ("delete".equals(action)) {
-                int vehicleID = Integer.parseInt(getParameterValue(request, "id"));
+                int vehicleID = Integer.parseInt(request.getParameter("id"));
                 vehicleDAO.deleteVehicle(vehicleID, customer.getCustomerID());
                 session.setAttribute("SUCCESS_MSG", "Vehicle deleted successfully!");
-                response.sendRedirect("profile.jsp");
+                session.setAttribute("CURRENT_VIEW", "profile");
+                response.sendRedirect("main");
             } else if ("add".equals(action) || "edit".equals(action)) {
-                String licensePlate = getParameterValue(request, "licensePlate");
-                String brand = getParameterValue(request, "brand");
-                String model = getParameterValue(request, "model");
-                String vehicleType = getParameterValue(request, "vehicleType");
-                String color = getParameterValue(request, "color");
+                String licensePlate = request.getParameter("licensePlate");
+                String brand = request.getParameter("brand");
+                String model = request.getParameter("model");
+                String vehicleType = request.getParameter("vehicleType");
+                String color = request.getParameter("color");
+
+                // Normalize license plate before any check or save
+                licensePlate = licensePlate == null ? "" : licensePlate.trim().toUpperCase();
 
                 // Combine brand, model, and type into VehicleModel field for now
                 String fullModel = brand + " " + model + " - " + vehicleType;
@@ -108,78 +114,64 @@ public class VehicleController extends HttpServlet {
                 }
 
                 if ("add".equals(action)) {
+                    // Kiểm tra xem xe đã tồn tại hay chưa
+                    if (vehicleDAO.checkLicensePlateExist(licensePlate)) {
+                        session.setAttribute("ERROR_MSG", "This vehicle is already registered.");
+                        session.setAttribute("CURRENT_VIEW", "profile");
+                        response.sendRedirect("main");
+                        return;
+                    }
+
                     if (vehicleImageUrl == null) {
                         vehicleImageUrl = "/assets/images/default-car.png";
                     }
                     vehicle.setVehicleImageUrl(vehicleImageUrl);
 
-                    // Kiểm tra xem biển số này đã tồn tại dạng deactive chưa
-                    Vehicle existingDeactive = vehicleDAO.findDeactivatedByLicensePlate(licensePlate,
-                            customer.getCustomerID());
-
-                    boolean isSuccess;
-                    String successMsg;
-                    if (existingDeactive != null) {
-                        // Xe đã bị xóa mềm → reactivate và cập nhật thông tin mới
-                        vehicle.setVehicleID(existingDeactive.getVehicleID());
-                        isSuccess = vehicleDAO.reactivateVehicle(vehicle);
-                        successMsg = "Vehicle restored and updated successfully!";
-                    } else {
-                        // Xe hoàn toàn mới → insert bình thường
-                        isSuccess = vehicleDAO.insertVehicle(vehicle);
-                        successMsg = "Vehicle added successfully!";
-                    }
-
+                    boolean isSuccess = vehicleDAO.insertVehicle(vehicle);
                     if (isSuccess) {
-                        session.setAttribute("SUCCESS_MSG", successMsg);
+                        session.setAttribute("SUCCESS_MSG", "Vehicle added successfully!");
                     } else {
                         session.setAttribute("ERROR_MSG", "Failed to add vehicle.");
                     }
                 } else if ("edit".equals(action)) {
-                    int vehicleID = Integer.parseInt(getParameterValue(request, "vehicleID"));
-                    vehicle.setVehicleID(vehicleID);
+                    int vehicleID = Integer.parseInt(request.getParameter("vehicleID"));
+
+                    // Kiểm tra xem biển số mới có bị trùng với xe khác đang active không
+                    if (vehicleDAO.checkLicensePlateExistExclude(licensePlate, vehicleID)) {
+                        session.setAttribute("ERROR_MSG", "This vehicle is already registered.");
+                        session.setAttribute("CURRENT_VIEW", "profile");
+                        response.sendRedirect("main");
+                        return;
+                    }
+
+                        vehicle.setVehicleID(vehicleID);
 
                     if (vehicleImageUrl != null) {
                         vehicle.setVehicleImageUrl(vehicleImageUrl);
                     } else {
                         // Keep old image
-                        String oldImage = getParameterValue(request, "oldImage");
+                        String oldImage = request.getParameter("oldImage");
                         vehicle.setVehicleImageUrl(
                                 oldImage != null && !oldImage.isEmpty() ? oldImage : "/assets/images/default-car.png");
                     }
                     boolean isUpdated = vehicleDAO.updateVehicle(vehicle);
                     if (isUpdated) {
                         session.setAttribute("SUCCESS_MSG", "Vehicle updated successfully!");
-                    } else {
+                    } else {    
                         session.setAttribute("ERROR_MSG", "Failed to update vehicle.");
                     }
                 }
 
-                response.sendRedirect("profile.jsp");
+                session.setAttribute("CURRENT_VIEW", "profile");
+                response.sendRedirect("main");
             }
         } catch (Exception e) {
             log("Error in VehicleController: " + e.getMessage());
             e.printStackTrace();
             session.setAttribute("ERROR_MSG", "An error occurred: " + e.getMessage());
-            response.sendRedirect("profile.jsp");
+            session.setAttribute("CURRENT_VIEW", "profile");
+            response.sendRedirect("main");
         }
-    }
-
-    private String getParameterValue(HttpServletRequest request, String paramName) {
-        String value = request.getParameter(paramName);
-        if (value != null) {
-            return value;
-        }
-        try {
-            Part part = request.getPart(paramName);
-            if (part != null) {
-                java.util.Scanner scanner = new java.util.Scanner(part.getInputStream(), "UTF-8");
-                return scanner.hasNext() ? scanner.useDelimiter("\\A").next() : null;
-            }
-        } catch (Exception e) {
-            // Ignore
-        }
-        return null;
     }
 
     @Override
@@ -187,7 +179,7 @@ public class VehicleController extends HttpServlet {
             throws ServletException, IOException {
         processRequest(request, response);
     }
-
+    
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

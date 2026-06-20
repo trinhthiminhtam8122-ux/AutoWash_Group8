@@ -24,7 +24,8 @@ public class UpdateProfileController extends HttpServlet {
         Account account = (Account) session.getAttribute("LOGIN_USER");
 
         if (customer == null || account == null) {
-            response.sendRedirect("login.jsp");
+            session.setAttribute("CURRENT_VIEW", "login");
+            response.sendRedirect("main");
             return;
         }
 
@@ -40,18 +41,21 @@ public class UpdateProfileController extends HttpServlet {
         // --- Validation ---
         if (fullName == null || fullName.trim().isEmpty()) {
             session.setAttribute("ERROR_MSG", "Full name cannot be empty.");
-            response.sendRedirect("profile.jsp");
+            session.setAttribute("CURRENT_VIEW", "profile");
+            response.sendRedirect("main");
             return;
         }
         if (email == null || email.trim().isEmpty()) {
             session.setAttribute("ERROR_MSG", "Email cannot be empty.");
-            response.sendRedirect("profile.jsp");
+            session.setAttribute("CURRENT_VIEW", "profile");
+            response.sendRedirect("main");
             return;
         }
         // Basic email format check
         if (!email.matches("^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$")) {
             session.setAttribute("ERROR_MSG", "Invalid email format.");
-            response.sendRedirect("profile.jsp");
+            session.setAttribute("CURRENT_VIEW", "profile");
+            response.sendRedirect("main");
             return;
         }
 
@@ -61,7 +65,8 @@ public class UpdateProfileController extends HttpServlet {
             // Check email uniqueness (exclude current customer)
             if (cDao.checkEmailExist(customer.getCustomerID(), email)) {
                 session.setAttribute("ERROR_MSG", "Email already used by another account.");
-                response.sendRedirect("profile.jsp");
+                session.setAttribute("CURRENT_VIEW", "profile");
+            response.sendRedirect("main");
                 return;
             }
 
@@ -87,7 +92,7 @@ public class UpdateProfileController extends HttpServlet {
             session.setAttribute("ERROR_MSG", "An error occurred. Please try again.");
         }
 
-        response.sendRedirect("profile.jsp");
+        response.sendRedirect("main?action=profile");
     }
 
     @Override
@@ -99,6 +104,7 @@ public class UpdateProfileController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.sendRedirect("profile.jsp");
+        request.getSession().setAttribute("CURRENT_VIEW", "profile");
+        response.sendRedirect("main");
     }
 }

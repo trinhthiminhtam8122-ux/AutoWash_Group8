@@ -12,21 +12,21 @@ import javax.servlet.http.HttpServletResponse;
 
 @WebServlet(name = "ImageServlet", urlPatterns = {"/uploads/*"})
 public class ImageServlet extends HttpServlet {
-    
-    // Thư mục cố định lưu ảnh bên ngoài Tomcat (Cùng thư mục lưu trong RegisterController)
+
+    // Thư mục cố định lưu ảnh bên ngoài Tomcat
     private final String UPLOAD_DIR = "D:" + File.separator + "auto_wash_uploads";
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
-        // Lấy tên file từ URL (ví dụ: URL là /uploads/123.jpg thì lấy ra 123.jpg)
+        // Lấy tên file từ URL (ví dụ: URL là /uploads/123.jpg thì lấy ra /123.jpg)
         String fileName = request.getPathInfo();
         if (fileName == null || fileName.equals("/")) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        
+
         // Bỏ dấu gạch chéo '/' đầu tiên
         fileName = fileName.substring(1);
         
@@ -35,18 +35,17 @@ public class ImageServlet extends HttpServlet {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        
+
         // Xác định loại nội dung (MIME type)
         String mimeType = getServletContext().getMimeType(file.getName());
         if (mimeType == null) {
             mimeType = "application/octet-stream";
         }
         response.setContentType(mimeType);
-        response.setContentLength((int) file.length());
-        
-        // Đọc file từ ổ đĩa và gửi qua response cho thẻ <img> trên giao diện
-        try (FileInputStream in = new FileInputStream(file);
-             OutputStream out = response.getOutputStream()) {
+
+        // Đọc file từ ổ đĩa và gửi qua response
+        try (OutputStream out = response.getOutputStream();
+             FileInputStream in = new FileInputStream(file)) {
             
             byte[] buffer = new byte[4096];
             int bytesRead;

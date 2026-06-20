@@ -22,7 +22,7 @@ public class VehicleDAO {
             conn = DBUtils.getConnection();
             if (conn != null) {
                 String sql = "SELECT VehicleID, CustomerID, LicensePlate, VehicleModel, Color, VehicleImageUrl "
-                           + "FROM Vehicle WHERE CustomerID = ? AND (Status IS NULL OR Status != 'deactive')";
+                        + "FROM Vehicle WHERE CustomerID = ? AND UPPER(Status) = 'ACTIVE'";
                 stm = conn.prepareStatement(sql);
                 stm.setInt(1, customerID);
                 rs = stm.executeQuery();
@@ -33,14 +33,16 @@ public class VehicleDAO {
                             rs.getString("LicensePlate"),
                             rs.getString("VehicleModel"),
                             rs.getString("Color"),
-                            rs.getString("VehicleImageUrl")
-                    ));
+                            rs.getString("VehicleImageUrl")));
                 }
             }
         } finally {
-            if (rs != null) rs.close();
-            if (stm != null) stm.close();
-            if (conn != null) conn.close();
+            if (rs != null)
+                rs.close();
+            if (stm != null)
+                stm.close();
+            if (conn != null)
+                conn.close();
         }
         return list;
     }
@@ -50,27 +52,42 @@ public class VehicleDAO {
         boolean check = false;
         Connection conn = null;
         PreparedStatement stm = null;
+        PreparedStatement updateOldStm = null;
         try {
             conn = DBUtils.getConnection();
             if (conn != null) {
-                String sql = "INSERT INTO Vehicle (CustomerID, LicensePlate, VehicleModel, Color, VehicleImageUrl) "
-                           + "VALUES (?, ?, ?, ?, ?)";
+                String normalizedLicense = vehicle.getLicensePlate() == null ? ""
+                        : vehicle.getLicensePlate().trim().toUpperCase();
+
+                // Giải phóng biển số nếu có xe đã bị xóa (Deleted) dùng biển này
+                String updateOldSql = "UPDATE Vehicle SET LicensePlate = LEFT(LicensePlate, 10) + '_DEL_' + CAST(VehicleID AS VARCHAR(20)) "
+                        + "WHERE UPPER(LicensePlate) = ? AND UPPER(Status) != 'ACTIVE'";
+                updateOldStm = conn.prepareStatement(updateOldSql);
+                updateOldStm.setString(1, normalizedLicense);
+                updateOldStm.executeUpdate();
+
+                String sql = "INSERT INTO Vehicle (CustomerID, LicensePlate, VehicleModel, Color, VehicleImageUrl, Status) "
+                        + "VALUES (?, ?, ?, ?, ?, 'Active')";
                 stm = conn.prepareStatement(sql);
                 stm.setInt(1, vehicle.getCustomerID());
-                stm.setString(2, vehicle.getLicensePlate());
+                stm.setString(2, normalizedLicense);
                 stm.setString(3, vehicle.getVehicleModel());
                 stm.setString(4, vehicle.getColor());
                 stm.setString(5, vehicle.getVehicleImageUrl());
                 check = stm.executeUpdate() > 0;
             }
         } finally {
-            if (stm != null) stm.close();
-            if (conn != null) conn.close();
+            if (updateOldStm != null)
+                updateOldStm.close();
+            if (stm != null)
+                stm.close();
+            if (conn != null)
+                conn.close();
         }
         return check;
     }
 
-    // Xóa mềm xe (chuyển Status sang deactive)
+    // Xóa mềm xe (chuyển Status sang Deleted)
     public boolean deleteVehicle(int vehicleID, int customerID) throws ClassNotFoundException, SQLException {
         boolean check = false;
         Connection conn = null;
@@ -78,76 +95,81 @@ public class VehicleDAO {
         try {
             conn = DBUtils.getConnection();
             if (conn != null) {
-                String sql = "UPDATE Vehicle SET Status = 'deactive' WHERE VehicleID = ? AND CustomerID = ?";
+                String sql = "UPDATE Vehicle SET Status = 'Deleted', LicensePlate = LEFT(LicensePlate, 10) + '_DEL_' + CAST(VehicleID AS VARCHAR(20)) "
+                        + "WHERE VehicleID = ? AND CustomerID = ? AND UPPER(Status) = 'ACTIVE'";
                 stm = conn.prepareStatement(sql);
                 stm.setInt(1, vehicleID);
                 stm.setInt(2, customerID);
                 check = stm.executeUpdate() > 0;
             }
         } finally {
-            if (stm != null) stm.close();
-            if (conn != null) conn.close();
+            if (stm != null)
+                stm.close();
+            if (conn != null)
+                conn.close();
         }
         return check;
     }
 
-    // Tìm xe đã bị deactive theo biển số & customerID (để reactivate thay vì insert mới)
-    public Vehicle findDeactivatedByLicensePlate(String licensePlate, int customerID) throws ClassNotFoundException, SQLException {
-        Vehicle vehicle = null;
+    // Kiểm tra xem biển số xe đã tồn tại và đang active hay chưa
+    public boolean checkLicensePlateExist(String licensePlate) throws ClassNotFoundException, SQLException {
+        boolean exist = false;
         Connection conn = null;
         PreparedStatement stm = null;
         ResultSet rs = null;
         try {
             conn = DBUtils.getConnection();
             if (conn != null) {
-                String sql = "SELECT VehicleID, CustomerID, LicensePlate, VehicleModel, Color, VehicleImageUrl "
-                           + "FROM Vehicle WHERE LicensePlate = ? AND CustomerID = ? AND Status = 'deactive'";
+                String sql = "SELECT 1 FROM Vehicle WHERE UPPER(LicensePlate) = ? "
+                        + "AND UPPER(Status) = 'ACTIVE'";
                 stm = conn.prepareStatement(sql);
-                stm.setString(1, licensePlate);
-                stm.setInt(2, customerID);
+                stm.setString(1, licensePlate == null ? "" : licensePlate.trim().toUpperCase());
                 rs = stm.executeQuery();
                 if (rs.next()) {
-                    vehicle = new Vehicle(
-                            rs.getInt("VehicleID"),
-                            rs.getInt("CustomerID"),
-                            rs.getString("LicensePlate"),
-                            rs.getString("VehicleModel"),
-                            rs.getString("Color"),
-                            rs.getString("VehicleImageUrl")
-                    );
+                    exist = true;
                 }
             }
         } finally {
-            if (rs != null) rs.close();
-            if (stm != null) stm.close();
-            if (conn != null) conn.close();
+            if (rs != null)
+                rs.close();
+            if (stm != null)
+                stm.close();
+            if (conn != null)
+                conn.close();
         }
-        return vehicle;
+        return exist;
     }
 
-    // Kích hoạt lại xe đã bị deactive (cập nhật thông tin mới và đặt Status = 'active')
-    public boolean reactivateVehicle(Vehicle vehicle) throws ClassNotFoundException, SQLException {
-        boolean check = false;
+    // Kiểm tra xem biển số xe đã tồn tại và đang active hay chưa (ngoại trừ xe đang
+    // sửa)
+    public boolean checkLicensePlateExistExclude(String licensePlate, int excludeVehicleID)
+            throws ClassNotFoundException, SQLException {
+        boolean exist = false;
         Connection conn = null;
         PreparedStatement stm = null;
+        ResultSet rs = null;
         try {
             conn = DBUtils.getConnection();
             if (conn != null) {
-                String sql = "UPDATE Vehicle SET VehicleModel = ?, Color = ?, VehicleImageUrl = ?, Status = 'active' "
-                           + "WHERE VehicleID = ? AND CustomerID = ?";
+                String sql = "SELECT 1 FROM Vehicle WHERE UPPER(LicensePlate) = ? "
+                        + "AND VehicleID != ? AND UPPER(Status) = 'ACTIVE'";
                 stm = conn.prepareStatement(sql);
-                stm.setString(1, vehicle.getVehicleModel());
-                stm.setString(2, vehicle.getColor());
-                stm.setString(3, vehicle.getVehicleImageUrl());
-                stm.setInt(4, vehicle.getVehicleID());
-                stm.setInt(5, vehicle.getCustomerID());
-                check = stm.executeUpdate() > 0;
+                stm.setString(1, licensePlate == null ? "" : licensePlate.trim().toUpperCase());
+                stm.setInt(2, excludeVehicleID);
+                rs = stm.executeQuery();
+                if (rs.next()) {
+                    exist = true;
+                }
             }
         } finally {
-            if (stm != null) stm.close();
-            if (conn != null) conn.close();
+            if (rs != null)
+                rs.close();
+            if (stm != null)
+                stm.close();
+            if (conn != null)
+                conn.close();
         }
-        return check;
+        return exist;
     }
 
     // Cập nhật thông tin xe
@@ -155,10 +177,22 @@ public class VehicleDAO {
         boolean check = false;
         Connection conn = null;
         PreparedStatement stm = null;
+        PreparedStatement updateOldStm = null;
         try {
             conn = DBUtils.getConnection();
             if (conn != null) {
-                String sql = "UPDATE Vehicle SET LicensePlate = ?, VehicleModel = ?, Color = ?, VehicleImageUrl = ? WHERE VehicleID = ? AND CustomerID = ?";
+                String normalizedLicense = vehicle.getLicensePlate() == null ? ""
+                        : vehicle.getLicensePlate().trim().toUpperCase();
+
+                // Giải phóng biển số nếu có xe đã bị xóa (Deleted) dùng biển này
+                String updateOldSql = "UPDATE Vehicle SET LicensePlate = LEFT(LicensePlate, 10) + '_DEL_' + CAST(VehicleID AS VARCHAR(20)) "
+                        + "WHERE UPPER(LicensePlate) = ? AND UPPER(Status) != 'ACTIVE'";
+                updateOldStm = conn.prepareStatement(updateOldSql);
+                updateOldStm.setString(1, normalizedLicense);
+                updateOldStm.executeUpdate();
+
+                String sql = "UPDATE Vehicle SET LicensePlate = ?, VehicleModel = ?, Color = ?, VehicleImageUrl = ? "
+                        + "WHERE VehicleID = ? AND CustomerID = ? AND UPPER(Status) = 'ACTIVE'";
                 stm = conn.prepareStatement(sql);
                 stm.setString(1, vehicle.getLicensePlate());
                 stm.setString(2, vehicle.getVehicleModel());
@@ -169,8 +203,12 @@ public class VehicleDAO {
                 check = stm.executeUpdate() > 0;
             }
         } finally {
-            if (stm != null) stm.close();
-            if (conn != null) conn.close();
+            if (updateOldStm != null)
+                updateOldStm.close();
+            if (stm != null)
+                stm.close();
+            if (conn != null)
+                conn.close();
         }
         return check;
     }
@@ -185,7 +223,7 @@ public class VehicleDAO {
             conn = DBUtils.getConnection();
             if (conn != null) {
                 String sql = "SELECT VehicleID, CustomerID, LicensePlate, VehicleModel, Color, VehicleImageUrl "
-                           + "FROM Vehicle WHERE VehicleID = ? AND CustomerID = ? AND (Status IS NULL OR Status != 'deactive')";
+                        + "FROM Vehicle WHERE VehicleID = ? AND CustomerID = ? AND UPPER(Status) = 'ACTIVE'";
                 stm = conn.prepareStatement(sql);
                 stm.setInt(1, vehicleID);
                 stm.setInt(2, customerID);
@@ -197,14 +235,16 @@ public class VehicleDAO {
                             rs.getString("LicensePlate"),
                             rs.getString("VehicleModel"),
                             rs.getString("Color"),
-                            rs.getString("VehicleImageUrl")
-                    );
+                            rs.getString("VehicleImageUrl"));
                 }
             }
         } finally {
-            if (rs != null) rs.close();
-            if (stm != null) stm.close();
-            if (conn != null) conn.close();
+            if (rs != null)
+                rs.close();
+            if (stm != null)
+                stm.close();
+            if (conn != null)
+                conn.close();
         }
         return vehicle;
     }
