@@ -1,0 +1,369 @@
+================================================================================
+         TÀI LIỆU: SỬA CHỮA WEBSOCKET CHAT & KIẾN THỨC JAVA WEBSOCKET
+                          AutoWash - Chat System
+                        Ngày: 14/06/2026
+================================================================================
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    PHẦN 1: KIẾN THỨC JAVA WEBSOCKET                        ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+1. WEBSOCKET LÀ GÌ?
+────────────────────
+WebSocket là giao thức truyền thông hai chiều (full-duplex) giữa client và 
+server trên một kết nối TCP duy nhất. Khác với HTTP (request-response), 
+WebSocket cho phép server chủ động gửi dữ liệu cho client mà không cần 
+client request trước.
+
+   HTTP truyền thống:
+   Client ──► Request  ──► Server
+   Client ◄── Response ◄── Server
+   (Kết nối đóng sau mỗi request)
+
+   WebSocket:
+   Client ◄──────────────► Server
+   (Kết nối mở liên tục, gửi nhận tự do)
+
+2. CÁC ANNOTATION QUAN TRỌNG TRONG JAVAX.WEBSOCKET
+────────────────────────────────────────────────────
+
+   a) @ServerEndpoint("/path/{param}")
+      ─ Đánh dấu một class là WebSocket Server Endpoint
+      ─ Định nghĩa URL mà client sẽ kết nối tới
+      ─ {param} là path parameter, giống @PathVariable trong Spring
+      
+      Ví dụ trong project:
+      @ServerEndpoint("/chat/{accountId}")
+      public class ChatEndpoint { ... }
+      
+      → Client sẽ kết nối tới: ws://localhost:8080/AutoWash/chat/5
+
+   b) @OnOpen
+      ─ Method được gọi khi client MỞ kết nối WebSocket
+      ─ Thường dùng để lưu session, xác thực user
+      ─ Parameters: Session session, @PathParam("name") String name
+      
+      Ví dụ:
+      @OnOpen
+      public void onOpen(Session session, @PathParam("accountId") String id) {
+          sessions.put(id, session);  // Lưu session vào map
+      }
+
+   c) @OnMessage
+      ─ Method được gọi khi NHẬN được tin nhắn từ client
+      ─ Parameter đầu tiên là nội dung tin nhắn (String)
+      ─ Đây là nơi xử lý logic chính: parse message, chuyển tiếp, etc.
+      
+      Ví dụ:
+      @OnMessage
+      public void onMessage(String message, Session session,
+                            @PathParam("accountId") String senderId) {
+          // Parse message: "receiverId|Hello"
+          // Tìm session của receiver
+          // Gửi tin nhắn
+      }
+
+   d) @OnClose
+      ─ Method được gọi khi client ĐÓNG kết nối
+      ─ Thường dùng để cleanup: xóa session khỏi map
+      
+      Ví dụ:
+      @OnClose
+      public void onClose(Session session, @PathParam("accountId") String id) {
+          sessions.remove(id);
+      }
+
+   e) @OnError
+      ─ Method được gọi khi có LỖI xảy ra trong kết nối
+      ─ Quan trọng để debug và xử lý lỗi gracefully
+      
+      Ví dụ:
+      @OnError
+      public void onError(Session session, Throwable throwable) {
+          throwable.printStackTrace();
+      }
+
+   f) @PathParam("name")
+      ─ Lấy giá trị từ URL path parameter
+      ─ Giống @PathVariable trong Spring MVC
+      ─ URL: /chat/5 → @PathParam("accountId") sẽ nhận giá trị "5"
+
+3. CÁC CLASS QUAN TRỌNG
+────────────────────────
+
+   a) javax.websocket.Session
+      ─ Đại diện cho MỘT kết nối WebSocket với client
+      ─ Mỗi client kết nối = 1 Session riêng
+      ─ Dùng session.getBasicRemote().sendText(msg) để GỬI tin nhắn
+      ─ session.getId() trả về ID duy nhất của session
+      ─ session.isOpen() kiểm tra kết nối còn mở không
+      
+      Cách gửi tin nhắn:
+      session.getBasicRemote().sendText("Hello!");  // Đồng bộ (sync)
+      session.getAsyncRemote().sendText("Hello!");  // Bất đồng bộ (async)
+
+   b) ConcurrentHashMap<String, Session>
+      ─ Thread-safe Map để lưu trữ các session
+      ─ Key: accountId (String), Value: Session
+      ─ PHẢI dùng ConcurrentHashMap vì WebSocket là multi-threaded
+      ─ Nếu dùng HashMap thông thường → ConcurrentModificationException!
+
+4. LUỒNG HOẠT ĐỘNG WEBSOCKET TRONG PROJECT
+───────────────────────────────────────────
+
+   Bước 1: Client mở kết nối
+   ─────────────────────────
+   JavaScript:
+   let ws = new WebSocket("ws://localhost:8080/AutoWash/chat/5");
+   
+   → Server nhận: @OnOpen được gọi
+   → Server lưu: sessions.put("5", session)
+
+   Bước 2: Client gửi tin nhắn
+   ───────────────────────────
+   JavaScript:
+   ws.send("1|Xin chào");   // Gửi cho account ID 1, nội dung "Xin chào"
+   
+   → Server nhận: @OnMessage được gọi
+   → Server parse: receiverId = "1", text = "Xin chào"
+   → Server tìm: Session của receiver ID "1" trong map
+   → Server gửi cho receiver: "5|Xin chào" (senderId|text)
+   → Server echo cho sender: "ME|Xin chào" (để client biết đã gửi thành công)
+
+   Bước 3: Client nhận tin nhắn
+   ────────────────────────────
+   JavaScript:
+   ws.onmessage = function(event) {
+       let parts = event.data.split("|");
+       let sender = parts[0];    // "5" hoặc "ME"
+       let text = parts.slice(1).join("|");
+       
+       if (sender === "ME") {
+           // Hiển thị bên phải (tin nhắn của mình)
+       } else {
+           // Hiển thị bên trái (tin nhắn của người khác)
+       }
+   };
+
+   Bước 4: Client đóng kết nối
+   ───────────────────────────
+   Khi user đóng tab hoặc gọi ws.close()
+   → Server: @OnClose được gọi
+   → Server xóa: sessions.remove("5")
+
+5. PROTOCOL MESSAGE FORMAT
+──────────────────────────
+   
+   Client → Server:  "receiverAccountId|messageText"
+   Server → Receiver: "senderAccountId|messageText"  
+   Server → Sender:   "ME|messageText" (echo xác nhận)
+
+   Ví dụ:
+   Customer (ID=5) gửi cho Admin (ID=1):
+     Client gửi:     "1|Tôi muốn đặt lịch rửa xe"
+     Admin nhận:      "5|Tôi muốn đặt lịch rửa xe"
+     Customer nhận:   "ME|Tôi muốn đặt lịch rửa xe"
+
+   Admin (ID=1) trả lời Customer (ID=5):
+     Admin gửi:       "5|Vâng, bạn muốn đặt ngày nào?"
+     Customer nhận:    "1|Vâng, bạn muốn đặt ngày nào?"
+     Admin nhận:       "ME|Vâng, bạn muốn đặt ngày nào?"
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    PHẦN 2: NHỮNG GÌ ĐÃ THAY ĐỔI                           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+================================================================================
+FILE 1: src/java/websocket/ChatEndpoint.java  [SỬA LẠI HOÀN TOÀN]
+================================================================================
+
+LỖI CŨ:
+────────
+- URL pattern: /chat/{username}/{role} → cần 2 path params
+- Frontend chỉ truyền 1 param: /chat/{accountId} → KHÔNG MATCH → lỗi 404
+- Phân biệt customer/staff bằng role param → phức tạp, không cần thiết
+- Message format cũ: "TênKhách: Nội dung" → không parse được chính xác
+- Dùng 2 map riêng (customerSessions, staffSessions) → khó quản lý
+- KHÔNG có echo message → người gửi không biết tin đã gửi thành công
+
+ĐÃ SỬA:
+────────
+- URL pattern: /chat/{accountId} → chỉ 1 path param, khớp với frontend
+- Dùng 1 ConcurrentHashMap duy nhất cho tất cả sessions
+- Message format mới: "receiverId|text" → dễ parse, rõ ràng
+- Thêm echo "ME|text" cho sender → client xác nhận tin nhắn đã gửi
+- Thêm @OnError handler → dễ debug khi có lỗi
+- Kiểm tra session.isOpen() trước khi gửi → tránh lỗi IOException
+- Xử lý trường hợp tin nhắn có chứa ký tự "|" trong nội dung
+
+KIẾN THỨC ÁP DỤNG:
+───────────────────
+- @ServerEndpoint annotation với single PathParam
+- @OnOpen, @OnMessage, @OnClose, @OnError lifecycle methods
+- ConcurrentHashMap cho thread-safety
+- session.getBasicRemote().sendText() để gửi tin nhắn
+- String.split() với limit parameter để parse message
+
+================================================================================
+FILE 2: web/assets/css/messenger-chat.css  [TẠO MỚI]
+================================================================================
+
+MÔ TẢ:
+───────
+File CSS riêng biệt cho chat widget, thiết kế theo phong cách Facebook Messenger.
+Dùng chung cho cả Customer (dashboard.jsp) và Admin (admin.jsp).
+
+CÁC THÀNH PHẦN CHÍNH:
+──────────────────────
+- .chat-fab: Nút tròn floating ở góc dưới-phải, có animation pulse
+- .chat-fab-badge: Badge đỏ thông báo tin nhắn mới (notification count)
+- .chat-popup: Popup chat container với shadow và border-radius
+- .chat-popup-header: Header gradient xanh (#0084ff → #00c6ff)
+- .msg-bubble: Bubble tin nhắn với border-radius giống Messenger
+- .msg-mine: Tin nhắn của mình (bên phải, nền xanh #0084ff)
+- .msg-theirs: Tin nhắn người khác (bên trái, nền xám #e4e6eb)
+- .msg-time: Timestamp hiển thị giờ gửi
+- .chat-input-bar: Thanh input với nút gửi
+- .typing-indicator: Animation 3 chấm khi đang gõ
+- Animations: fadeIn, slideUp, pulse cho notification badge
+- .admin-chat-popup: Layout 2 cột cho admin (user list | chat area)
+- .user-item: Item trong danh sách user với online indicator
+- .unread-badge: Badge đếm tin nhắn chưa đọc
+
+DESIGN TOKENS:
+──────────────
+- Messenger Blue: #0084ff
+- Message Gray: #e4e6eb  
+- Background: #ffffff
+- Text Dark: #1e293b
+- Border: #e2e8f0
+- Online Green: #31a24c
+
+================================================================================
+FILE 3: web/WEB-INF/views/dashboard.jsp  [SỬA PHẦN CHAT WIDGET]
+================================================================================
+
+LỖI CŨ:
+────────
+- WebSocket URL: /chat/ + myAccountId → chỉ 1 param nhưng backend cần 2
+- Inline CSS trộn lẫn trong HTML → khó bảo trì
+- Thiếu animation mở/đóng chat
+- Thiếu notification badge
+- Thiếu timestamp trên tin nhắn
+- Thiếu xử lý reconnect khi mất kết nối
+- Thiếu typing indicator
+
+ĐÃ SỬA:
+────────
+- Link CSS file messenger-chat.css mới
+- Chat FAB button với animation pulse và notification badge
+- Chat popup với header gradient, avatar status
+- Tin nhắn style Messenger: bubble shape, colors, timestamps
+- Auto-scroll khi nhận/gửi tin nhắn
+- Notification badge đếm tin nhắn mới khi chat box đóng
+- Animation mượt mà khi mở/đóng chat
+- WebSocket URL khớp backend mới: /chat/{accountId}
+- Xử lý reconnect: tự động kết nối lại khi mở chat
+- Sound notification (tùy chọn)
+
+================================================================================
+FILE 4: web/WEB-INF/views/admin.jsp  [SỬA PHẦN CHAT WIDGET]
+================================================================================
+
+LỖI CŨ:
+────────
+- WebSocket URL thiếu khớp backend
+- Inline CSS rất nhiều → khó maintain
+- Thiếu unread message count trên user list
+- Thiếu online/offline indicator
+- UI đơn giản, chưa giống Messenger
+
+ĐÃ SỬA:
+────────
+- Link CSS file messenger-chat.css mới
+- Layout 2 cột: Sidebar user list + Chat area
+- User list hiển thị avatar, tên, tin nhắn cuối, online indicator
+- Unread badge đỏ trên mỗi user khi có tin chưa đọc
+- Messenger-style message bubbles
+- Timestamps trên tin nhắn
+- Header hiển thị thông tin user đang chat
+- WebSocket URL khớp backend mới: /chat/{accountId}
+- Auto-reset unread count khi chọn user
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    PHẦN 3: SƠ ĐỒ KIẾN TRÚC                                ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+                        ┌─────────────────────┐
+                        │    WebSocket Server  │
+                        │   ChatEndpoint.java  │
+                        │  /chat/{accountId}   │
+                        └──────────┬──────────┘
+                                   │
+                    ┌──────────────┼──────────────┐
+                    │              │              │
+              ┌─────▼─────┐ ┌─────▼─────┐ ┌─────▼─────┐
+              │ Customer  │ │   Admin   │ │  Staff    │
+              │ Browser   │ │  Browser  │ │ Browser   │
+              │ (ID=5)    │ │  (ID=1)   │ │ (ID=3)    │
+              └───────────┘ └───────────┘ └───────────┘
+              dashboard.jsp   admin.jsp     admin.jsp
+
+   ConcurrentHashMap sessions:
+   ┌──────────┬─────────────┐
+   │   Key    │    Value    │
+   ├──────────┼─────────────┤
+   │   "1"    │  Session A  │  ← Admin
+   │   "3"    │  Session B  │  ← Staff  
+   │   "5"    │  Session C  │  ← Customer
+   └──────────┴─────────────┘
+
+   Luồng gửi tin nhắn (Customer → Admin):
+   ┌────────────┐    "1|Hello"     ┌──────────────┐   "5|Hello"    ┌────────────┐
+   │ Customer 5 │ ──────────────► │ ChatEndpoint │ ────────────► │  Admin 1   │
+   │            │ ◄────────────── │              │               │            │
+   └────────────┘    "ME|Hello"    └──────────────┘               └────────────┘
+                    (echo back)
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    PHẦN 4: CẤU TRÚC FILE                                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+   src/java/websocket/
+   ├── ChatEndpoint.java            [SỬA] - WebSocket endpoint chính
+   ├── ChatSessionStore.java        [GIỮ NGUYÊN] - Lưu account theo HTTP session
+   ├── HttpSessionConfigurator.java  [GIỮ NGUYÊN] - Legacy, không dùng
+   └── WebSocketSessionFilter.java   [GIỮ NGUYÊN] - Sync login vào ChatSessionStore
+
+   web/assets/css/
+   ├── main.css                     [GIỮ NGUYÊN]
+   ├── dashboard.css                [GIỮ NGUYÊN]
+   └── messenger-chat.css           [TẠO MỚI] - CSS cho chat widget Messenger
+
+   web/WEB-INF/views/
+   ├── dashboard.jsp                [SỬA] - Chat widget cho Customer
+   └── admin.jsp                    [SỬA] - Chat panel cho Admin/Staff
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    PHẦN 5: CÁCH TEST                                       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+1. Deploy lại project lên Tomcat/GlassFish
+2. Mở Browser 1: Login tài khoản Admin → vào Admin Panel → bấm nút Chat
+3. Mở Browser 2 (hoặc Incognito): Login tài khoản Customer → vào Dashboard → bấm Chat
+4. Customer gõ tin nhắn → Admin sẽ thấy user xuất hiện trong danh sách + tin nhắn
+5. Admin chọn Customer → gõ trả lời → Customer sẽ nhận được tin nhắn
+6. Kiểm tra:
+   - Tin nhắn hiển thị đúng bên (mình bên phải, người khác bên trái)
+   - Màu sắc đúng (xanh cho mình, xám cho người khác)
+   - Timestamp hiển thị chính xác
+   - Animation mở/đóng chat mượt mà
+   - Notification badge hoạt động
+
+================================================================================
+                              HẾT TÀI LIỆU
+================================================================================
