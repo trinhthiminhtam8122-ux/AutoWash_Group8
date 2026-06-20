@@ -10,34 +10,32 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet(name = "ImageServlet", urlPatterns = { "/uploads/* " })
+@WebServlet(name = "ImageServlet", urlPatterns = {"/uploads/*"})
 public class ImageServlet extends HttpServlet {
 
-    // Thư mục cố định lưu ảnh bên ngoài Tomcat (Cùng thư mục lưu trong
-    //
-    // RegisterController)
+    // Thư mục cố định lưu ảnh bên ngoài Tomcat
     private final String UPLOAD_DIR = "D:" + File.separator + "auto_wash_uploads";
 
     @Override
-    protected void doGet(HttpServletRequest reques
-
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
         
-        // Lấy tên file từ URL (ví dụ: URL là /uploads/123.jpg thì lấy ra 123.jpg)
+        // Lấy tên file từ URL (ví dụ: URL là /uploads/123.jpg thì lấy ra /123.jpg)
         String fileName = request.getPathInfo();
         if (fileName == null || fileName.equals("/")) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
-         
+            return;
+        }
 
-        
         // Bỏ dấu gạch chéo '/' đầu tiên
-
+        fileName = fileName.substring(1);
         
         File file = new File(UPLOAD_DIR, fileName);
         if (!file.exists()) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
-         
+            return;
+        }
 
-        
         // Xác định loại nội dung (MIME type)
         String mimeType = getServletContext().getMimeType(file.getName());
         if (mimeType == null) {
@@ -45,10 +43,9 @@ public class ImageServlet extends HttpServlet {
         }
         response.setContentType(mimeType);
 
-        
-        // Đọc file từ ổ đĩa và gửi qua response cho thẻ <im
-                FileInputStream in = new FileInputStream(file);
-
+        // Đọc file từ ổ đĩa và gửi qua response
+        try (OutputStream out = response.getOutputStream();
+             FileInputStream in = new FileInputStream(file)) {
             
             byte[] buffer = new byte[4096];
             int bytesRead;
