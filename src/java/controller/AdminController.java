@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-@WebServlet(name = "AdminController", urlPatterns = {"/AdminController"})
+@WebServlet(name = "AdminController", urlPatterns = { "/AdminController" })
 public class AdminController extends HttpServlet {
 
     @Override
@@ -20,8 +20,9 @@ public class AdminController extends HttpServlet {
             throws ServletException, IOException {
         HttpSession session = request.getSession();
         Account acc = (Account) session.getAttribute("LOGIN_USER");
-        
-        if (acc == null || (!"Admin".equals(acc.getRole()) && !"Manager".equals(acc.getRole()) && !"Staff".equals(acc.getRole()))) {
+
+        if (acc == null || (!"Admin".equals(acc.getRole()) && !"Manager".equals(acc.getRole())
+                && !"Staff".equals(acc.getRole()))) {
             session.setAttribute("CURRENT_VIEW", "login");
             response.sendRedirect("main");
             return;
@@ -34,7 +35,7 @@ public class AdminController extends HttpServlet {
         } catch (Exception e) {
             log("Error at AdminController doGet: " + e.toString());
         }
-        
+
         request.getRequestDispatcher("/WEB-INF/views/admin.jsp").forward(request, response);
     }
 
@@ -44,8 +45,9 @@ public class AdminController extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         HttpSession session = request.getSession();
         Account acc = (Account) session.getAttribute("LOGIN_USER");
-        
-        if (acc == null || (!"Admin".equals(acc.getRole()) && !"Manager".equals(acc.getRole()) && !"Staff".equals(acc.getRole()))) {
+
+        if (acc == null || (!"Admin".equals(acc.getRole()) && !"Manager".equals(acc.getRole())
+                && !"Staff".equals(acc.getRole()))) {
             response.sendRedirect("main");
             return;
         }
@@ -55,10 +57,10 @@ public class AdminController extends HttpServlet {
             try {
                 int bookingID = Integer.parseInt(request.getParameter("bookingID"));
                 String newStatus = request.getParameter("status");
-                
+
                 BookingDAO dao = new BookingDAO();
                 boolean success = dao.updateBookingStatus(bookingID, newStatus);
-                
+
                 if (success) {
                     session.setAttribute("SUCCESS_MSG", "Cập nhật trạng thái thành công!");
                 } else {
@@ -69,7 +71,7 @@ public class AdminController extends HttpServlet {
                 session.setAttribute("ERROR_MSG", "Có lỗi xảy ra: " + e.getMessage());
             }
         }
-        
+
         session.setAttribute("CURRENT_VIEW", "admin");
         response.sendRedirect("main");
     }
