@@ -2,16 +2,19 @@
 # GITIGNORE CHO DỰ ÁN JAVA WEB (NETBEANS & ANT MULTIPLAYER)
 # ====================================================================
 
-# 1. Các thư mục sinh ra khi chạy và biên dịch code (Bắt buộc chặn)
+# 1. Các thư mục sinh ra khi chạy và biên dịch code
 build/
 dist/
 nbproject/private/
 
-# 2. Các file log hệ thống và file nén tạm
+# 2. Các file Java đã biên dịch
+*.class
+
+# 3. Các file log hệ thống và file đóng gói
 *.log
 *.war
 *.ear
 
-# 3. Các file cấu hình hệ thống của hệ điều hành (Nếu có)
+# 4. Các file cấu hình hệ điều hành
 .DS_Store
 Thumbs.db
