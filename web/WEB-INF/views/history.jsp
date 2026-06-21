@@ -12,10 +12,9 @@
     request.setCharacterEncoding("UTF-8");
     response.setContentType("text/html;charset=UTF-8");
     List<Booking> bookingList = (List<Booking>) request.getAttribute("bookings");
-    String customerName = (String) request.getAttribute("customer");
 
-    Account account = (Account) request.getAttribute("LOGIN_USER");
-    Customer customer = (Customer) request.getAttribute("CUSTOMER_INFO");
+    Account account = (Account) session.getAttribute("LOGIN_USER");
+    Customer customer = (Customer) session.getAttribute("CUSTOMER_INFO");
     String userName;
     if (customer != null) {
         userName = customer.getFullName();
@@ -33,6 +32,7 @@
         <title>AutoWash - Booking History</title>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/main.css" />
         <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/booking.css" />
         <style>
             .history-container {
@@ -252,30 +252,30 @@
     </head>
     <body>
         <div class="page-shell">
-            <nav>
-                <a href="javascript:void(0)" onclick="navTo('home')" class="brand"><i class="fa-solid fa-car-burst"></i> AutoWash</a>
-                <div class="nav-links">
-                    <a href="javascript:void(0)" onclick="navTo('dashboard')">Home</a>
-                    <a href="javascript:void(0)" onclick="navTo('booking')">Booking</a>
-                    <a href="javascript:void(0)" onclick="navTo('history')">History</a>
-                    <a href="javascript:void(0)" onclick="navTo('profile')">Profile</a>
-                </div>
-                <div class="nav-right">
-                    <div class="user-info">
-                        <% if (account != null && customer != null && customer.getAvatarUrl() != null && !customer.getAvatarUrl().isEmpty()) { %>
-                        <img src="<%= request.getContextPath() + (customer.getAvatarUrl().startsWith("/") ? "" : "/") + customer.getAvatarUrl()%>" alt="Avatar">
-                        <% } else { %>
-                        <i class="fa-regular fa-user"></i>
-                        <% } %>
-                        <span><%= userName%></span>
-                    </div>
-                    <% if (account != null) { %>
-                    <a href="LogoutController" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        <nav>
+            <a href="javascript:void(0)" onclick="navTo('home')" class="brand"><i class="fa-solid fa-car-burst"></i> AutoWash</a>
+            <div class="nav-links">
+                <a href="javascript:void(0)" onclick="navTo('dashboard')">Home</a>
+                <a href="javascript:void(0)" onclick="navTo('booking')">Booking</a>
+                <a href="javascript:void(0)" onclick="navTo('history')">History</a>
+                <a href="javascript:void(0)" onclick="navTo('profile')">Profile</a>
+            </div>
+            <div class="nav-right">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <% if (customer != null && customer.getAvatarUrl() != null && !customer.getAvatarUrl().isEmpty()) {%>
+                    <img src="<%= request.getContextPath() + (customer.getAvatarUrl().startsWith("/") ? "" : "/") + customer.getAvatarUrl()%>" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
                     <% } else { %>
-                    <a href="javascript:void(0)" onclick="navTo('login')" class="logout-btn"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
-                    <% } %>
+                    <i class="fa-regular fa-user"></i>
+                    <% }%>
+                    <span><%= userName%></span>
                 </div>
-            </nav>
+                <% if (account != null) { %>
+                <a href="LogoutController" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+                <% } else { %>
+                <a href="javascript:void(0)" onclick="navTo('login')" class="logout-btn" style="background: var(--brand); color: white;"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
+                <% }%>
+            </div>
+        </nav>
 
             <main class="history-container">
                 <div class="history-header">
@@ -370,22 +370,22 @@
                             <span class="status-badge <%= statusClass%>"><%= b.getStatus()%></span>
                         </div>
 
-                        <%-- Cột Action: chỉ render khi Pending --%>
-                        <% if ("Pending".equals(b.getStatus())) { %>
-                        <div class="info-group" style="min-width: unset;">
-                            <% if (canCancel) { %>
-                            <button class="btn-cancel"
-                                    onclick="openCancelModal(<%= b.getBookingID()%>, '<%= scheduledDisplay%>')">
-                                <i class="fa-solid fa-xmark"></i> Cancel
-                            </button>
-                            <% } else { %>
-                            <span class="cancel-soon-note">
-                                <i class="fa-solid fa-clock"></i>
-                                Cannot cancel within 2h of appointment
-                            </span>
+                        <%-- Cột Action: luôn render để giữ layout --%>
+                        <div class="info-group action-group" style="min-width: 120px; align-items: flex-end; justify-content: center; display: flex;">
+                            <% if ("Pending".equals(b.getStatus())) { %>
+                                <% if (canCancel) { %>
+                                <button class="btn-cancel"
+                                        onclick="openCancelModal(<%= b.getBookingID()%>, '<%= scheduledDisplay%>')">
+                                    <i class="fa-solid fa-xmark"></i> Cancel
+                                </button>
+                                <% } else { %>
+                                <span class="cancel-soon-note" style="text-align: right;">
+                                    <i class="fa-solid fa-clock"></i>
+                                    Cannot cancel within 2h of appointment
+                                </span>
+                                <% } %>
                             <% } %>
                         </div>
-                        <% } %>
                     </div>
                     <%
                         }

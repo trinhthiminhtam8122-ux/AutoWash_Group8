@@ -4,6 +4,7 @@ import dao.BookingDAO;
 import dto.Account;
 import dto.Booking;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -32,7 +33,7 @@ public class AdminController extends HttpServlet {
             BookingDAO dao = new BookingDAO();
             List<Booking> list = dao.getAllBookings();
             request.setAttribute("bookings", list);
-        } catch (Exception e) {
+        } catch (ClassNotFoundException | SQLException e) {
             log("Error at AdminController doGet: " + e.toString());
         }
 

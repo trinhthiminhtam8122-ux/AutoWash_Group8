@@ -84,6 +84,9 @@ nav {
     color: var(--brand-dark);
     font-weight: 700;
     transition: background 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
 }
 
 .logout-btn:hover {
@@ -111,6 +114,10 @@ nav {
 
 .nav-right i.fa-regular {
     color: var(--brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
 }
 
 .booking-container {

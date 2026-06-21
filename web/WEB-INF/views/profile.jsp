@@ -396,9 +396,9 @@
     <nav>
         <a href="javascript:void(0)" onclick="navTo('home')" class="brand"><i class="fa-solid fa-car-burst"></i> AutoWash</a>
         <div class="nav-links">
-            <a href="javascript:void(0)" onclick="navTo('home')">Home</a>
-            <a href="#">Booking</a>
-            <a href="#">History</a>
+            <a href="javascript:void(0)" onclick="navTo('home')" >Home</a>
+            <a href="javascript:void(0)" onclick="navTo('booking')">Booking</a>
+            <a href="javascript:void(0)" onclick="navTo('history')">History</a>
             <a href="javascript:void(0)" onclick="navTo('profile')" style="color: var(--primary);">Profile</a>
         </div>
         <div class="nav-right">
