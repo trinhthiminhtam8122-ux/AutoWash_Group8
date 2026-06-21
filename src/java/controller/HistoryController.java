@@ -18,9 +18,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-/**
- *
- */
+
 @WebServlet(name = "HistoryController", urlPatterns = {"/HistoryController"})
 public class HistoryController extends HttpServlet {
 

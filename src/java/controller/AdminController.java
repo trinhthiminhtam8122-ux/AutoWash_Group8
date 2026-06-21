@@ -38,7 +38,7 @@ public class AdminController extends HttpServlet {
         BookingDAO dao = new BookingDAO();
         try {
             if ("all".equals(action)) {
-                request.setAttribute("bookings", dao.getAllBookings());
+                request.setAttribute("bookings", dao.getAllAdminBookings());
                 request.setAttribute("activePage", "all");
                 request.setAttribute("pageTitle", "All Bookings");
             } else {

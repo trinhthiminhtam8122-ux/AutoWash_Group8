@@ -341,3 +341,4 @@ public class BookingDAO {
             booking.setNeedCheckout(false);
         }
     }
+}
