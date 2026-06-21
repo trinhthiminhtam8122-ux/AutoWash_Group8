@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package dto;
 
 import java.sql.Date;
@@ -9,12 +5,8 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 
-/**
- *
- * @author Duong
- */
 public class AdminBookingDTO {
-    
+
     private int bookingID;
     private String customerName;
     private String phone;
